@@ -1,0 +1,16 @@
+[package]
+name = "astro-web"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+astro_lib = { path = "../astro_lib" }
+leptos = { workspace = true }
+leptos_meta = "0.8"
+leptos_i18n = { version = "0.6", features = ["csr"] }
+serde = { version = "1", features = ["derive"] }
+web-sys = { version = "0.3", features = ["Window", "Storage"] }
+
+[build-dependencies.leptos_i18n_build]
+version = "0.6"
+features = ["csr"]

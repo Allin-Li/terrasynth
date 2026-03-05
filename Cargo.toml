@@ -1,0 +1,7 @@
+[workspace]
+resolver = "3"
+members = ["astro_lib", "astro_web"]
+
+[workspace.dependencies]
+leptos = { version = "0.8", features = ["csr"] }
+thiserror = "2"
