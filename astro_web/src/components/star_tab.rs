@@ -4,7 +4,7 @@ use leptos::prelude::*;
 
 use super::compare::{CompareTable, Snapshot};
 use super::storage::{ls_bool, ls_f64};
-use super::ui::{BoolRow, NumberInput, ResultRow, SectionHeader, fmt_result};
+use super::ui::{BoolRow, InfoHint, NumberInput, ResultRow, SectionHeader, fmt_result};
 
 #[component]
 pub fn StarTab() -> impl IntoView {
@@ -103,7 +103,8 @@ pub fn StarTab() -> impl IntoView {
                     <p class="text-[10px] font-semibold text-hint uppercase tracking-widest">
                         {move || if binary_mode.get() { t_string!(i18n, star_a) } else { t_string!(i18n, star) }}
                     </p>
-                    <NumberInput label=move || t!(i18n, star_mass) value=mass unit="M☉" step="0.01" />
+                    <NumberInput label=move || t!(i18n, star_mass) value=mass unit="M☉" step="0.01"
+                        hint=move || t!(i18n, hint_star_mass_input) />
 
                     // Binary mode toggle
                     <button
@@ -127,13 +128,16 @@ pub fn StarTab() -> impl IntoView {
                             <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
                                 {t!(i18n, star_b)}
                             </p>
-                            <NumberInput label=move || t!(i18n, star_b_mass) value=mass_b unit="M☉" step="0.01" />
+                            <NumberInput label=move || t!(i18n, star_b_mass) value=mass_b unit="M☉" step="0.01"
+                                hint=move || t!(i18n, hint_star_b_mass) />
 
                             <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
                                 {t!(i18n, binary_orbit)}
                             </p>
-                            <NumberInput label=move || t!(i18n, separation) value=bin_sep unit="AU" step="0.5" />
-                            <NumberInput label=move || t!(i18n, eccentricity) value=bin_ecc step="0.01" />
+                            <NumberInput label=move || t!(i18n, separation) value=bin_sep unit="AU" step="0.5"
+                                hint=move || t!(i18n, hint_separation) />
+                            <NumberInput label=move || t!(i18n, eccentricity) value=bin_ecc step="0.01"
+                                hint=move || t!(i18n, hint_bin_eccentricity) />
 
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-label">{t!(i18n, orbit_type)}</span>
@@ -254,19 +258,24 @@ pub fn StarTab() -> impl IntoView {
                     } else {
                         view! { <SectionHeader label=move || t!(i18n, star_properties) /> }.into_any()
                     }}
-                    <ResultRow label=move || t!(i18n, luminosity)>
+                    <ResultRow label=move || t!(i18n, luminosity)
+                        hint=move || t!(i18n, hint_luminosity)>
                         {move || fmt_result(lum(), 3)}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, temperature_class)>
+                    <ResultRow label=move || t!(i18n, temperature_class)
+                        hint=move || t!(i18n, hint_temperature)>
                         {temp_with_class}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, radius_solar)>
+                    <ResultRow label=move || t!(i18n, radius_solar)
+                        hint=move || t!(i18n, hint_radius_solar)>
                         {move || fmt_result(rad(), 3)}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, lifetime)>
+                    <ResultRow label=move || t!(i18n, lifetime)
+                        hint=move || t!(i18n, hint_lifetime)>
                         {move || fmt_result(life(), 2)}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, peak_wavelength)>
+                    <ResultRow label=move || t!(i18n, peak_wavelength)
+                        hint=move || t!(i18n, hint_peak_wavelength)>
                         {peak_display}
                     </ResultRow>
 
@@ -274,36 +283,46 @@ pub fn StarTab() -> impl IntoView {
                     {move || if binary_mode.get() {
                         Some(view! {
                             <SectionHeader label=move || t!(i18n, star_b_properties) />
-                            <ResultRow label=move || t!(i18n, luminosity)>
+                            <ResultRow label=move || t!(i18n, luminosity)
+                                hint=move || t!(i18n, hint_luminosity)>
                                 {move || fmt_result(lum_b(), 3)}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, temperature_class)>
+                            <ResultRow label=move || t!(i18n, temperature_class)
+                                hint=move || t!(i18n, hint_temperature)>
                                 {temp_b_with_class}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, radius_solar)>
+                            <ResultRow label=move || t!(i18n, radius_solar)
+                                hint=move || t!(i18n, hint_radius_solar)>
                                 {move || fmt_result(rad_b(), 3)}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, lifetime)>
+                            <ResultRow label=move || t!(i18n, lifetime)
+                                hint=move || t!(i18n, hint_lifetime)>
                                 {move || fmt_result(life_b(), 2)}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, peak_wavelength)>
+                            <ResultRow label=move || t!(i18n, peak_wavelength)
+                                hint=move || t!(i18n, hint_peak_wavelength)>
                                 {peak_b_display}
                             </ResultRow>
 
                             <SectionHeader label=move || t!(i18n, binary_system) />
-                            <ResultRow label=move || t!(i18n, binary_period)>
+                            <ResultRow label=move || t!(i18n, binary_period)
+                                hint=move || t!(i18n, hint_bin_period)>
                                 {move || format!("{:.1}", bin_period())}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, combined_luminosity)>
+                            <ResultRow label=move || t!(i18n, combined_luminosity)
+                                hint=move || t!(i18n, hint_combined_lum)>
                                 {move || fmt_result(comb_lum(), 3)}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, combined_hz)>
+                            <ResultRow label=move || t!(i18n, combined_hz)
+                                hint=move || t!(i18n, hint_combined_hz)>
                                 {bin_hz_display}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, s_type_max_orbit)>
+                            <ResultRow label=move || t!(i18n, s_type_max_orbit)
+                                hint=move || t!(i18n, hint_s_type_max)>
                                 {move || format!("{:.2}", s_crit())}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, p_type_min_orbit)>
+                            <ResultRow label=move || t!(i18n, p_type_min_orbit)
+                                hint=move || t!(i18n, hint_p_type_min)>
                                 {move || format!("{:.2}", p_crit())}
                             </ResultRow>
                         })
@@ -312,23 +331,28 @@ pub fn StarTab() -> impl IntoView {
                     }}
 
                     <SectionHeader label=move || t!(i18n, habitable_zone) />
-                    <ResultRow label=move || t!(i18n, hz_inner_outer)>
+                    <ResultRow label=move || t!(i18n, hz_inner_outer)
+                        hint=move || t!(i18n, hint_hz)>
                         {hz_display}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, frost_line)>
+                    <ResultRow label=move || t!(i18n, frost_line)
+                        hint=move || t!(i18n, hint_frost_line)>
                         {frost_display}
                     </ResultRow>
 
                     <SectionHeader label=move || t!(i18n, system_boundaries) />
-                    <ResultRow label=move || t!(i18n, inner_au)>
+                    <ResultRow label=move || t!(i18n, inner_au)
+                        hint=move || t!(i18n, hint_sys_inner)>
                         {sys_inner}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, outer_au)>
+                    <ResultRow label=move || t!(i18n, outer_au)
+                        hint=move || t!(i18n, hint_sys_outer)>
                         {sys_outer}
                     </ResultRow>
 
                     <SectionHeader label=move || t!(i18n, habitability) />
-                    <BoolRow label=move || t!(i18n, optimal_star_mass) value=habitable />
+                    <BoolRow label=move || t!(i18n, optimal_star_mass) value=habitable
+                        hint=move || t!(i18n, hint_optimal_star) />
 
                     <SectionHeader label=move || t!(i18n, flora_prediction) />
                     {move || match temp() {
@@ -340,7 +364,10 @@ pub fn StarTab() -> impl IntoView {
                             Some(view! {
                                 <div class="flex justify-between items-center gap-4 py-2.5 px-3
                                             border-b border-divider/30 rounded hover:bg-edge/20">
-                                    <span class="text-label text-sm">{t!(i18n, predicted_pigment)}</span>
+                                    <span class="text-label text-sm flex items-center gap-1">
+                                        {t!(i18n, predicted_pigment)}
+                                        <InfoHint text=move || t!(i18n, hint_predicted_pigment) />
+                                    </span>
                                     <div class="flex items-center gap-2">
                                         <span
                                             class="w-4 h-4 rounded-full ring-1 ring-edge"
@@ -351,14 +378,23 @@ pub fn StarTab() -> impl IntoView {
                                         </span>
                                     </div>
                                 </div>
-                                <ResultRow label=move || t!(i18n, absorbed_range)>
+                                <ResultRow label=move || t!(i18n, absorbed_range)
+                                    hint=move || t!(i18n, hint_absorbed_range)>
                                     {pred.absorbed_range.to_string()}
                                 </ResultRow>
-                                <ResultRow label=move || t!(i18n, reflected_color)>
+                                <ResultRow label=move || t!(i18n, reflected_color)
+                                    hint=move || t!(i18n, hint_reflected_color)>
                                     {pred.reflected_color.to_string()}
                                 </ResultRow>
                                 <p class="text-xs text-hint leading-relaxed px-3 py-2">
-                                    {pred.reasoning.to_string()}
+                                    {match sc {
+                                        SpectralClass::O | SpectralClass::B => t_string!(i18n, flora_reasoning_ob),
+                                        SpectralClass::A => t_string!(i18n, flora_reasoning_a),
+                                        SpectralClass::F => t_string!(i18n, flora_reasoning_f),
+                                        SpectralClass::G => t_string!(i18n, flora_reasoning_g),
+                                        SpectralClass::K => t_string!(i18n, flora_reasoning_k),
+                                        SpectralClass::M => t_string!(i18n, flora_reasoning_m),
+                                    }}
                                 </p>
                             })
                         }

@@ -111,7 +111,8 @@ pub fn PlanetTab() -> impl IntoView {
                     <p class="text-[10px] font-semibold text-hint uppercase tracking-widest">
                         {t!(i18n, planet)}
                     </p>
-                    <NumberInput label=move || t!(i18n, mass) value=planet_mass unit="M⊕" step="0.01" />
+                    <NumberInput label=move || t!(i18n, mass) value=planet_mass unit="M⊕" step="0.01"
+                        hint=move || t!(i18n, hint_mass) />
 
                     // Radius toggle: auto or manual
                     <div class="flex flex-col gap-1.5">
@@ -165,17 +166,24 @@ pub fn PlanetTab() -> impl IntoView {
                     <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
                         {t!(i18n, orbit)}
                     </p>
-                    <NumberInput label=move || t!(i18n, semi_major_axis) value=semi_major unit="AU" step="0.01" />
-                    <NumberInput label=move || t!(i18n, eccentricity) value=eccentricity step="0.001" />
-                    <NumberInput label=move || t!(i18n, axial_tilt) value=axial_tilt unit="°" step="0.1" />
-                    <NumberInput label=move || t!(i18n, star_mass) value=star_mass unit="M☉" step="0.01" />
+                    <NumberInput label=move || t!(i18n, semi_major_axis) value=semi_major unit="AU" step="0.01"
+                        hint=move || t!(i18n, hint_semi_major) />
+                    <NumberInput label=move || t!(i18n, eccentricity) value=eccentricity step="0.001"
+                        hint=move || t!(i18n, hint_eccentricity) />
+                    <NumberInput label=move || t!(i18n, axial_tilt) value=axial_tilt unit="°" step="0.1"
+                        hint=move || t!(i18n, hint_axial_tilt) />
+                    <NumberInput label=move || t!(i18n, star_mass) value=star_mass unit="M☉" step="0.01"
+                        hint=move || t!(i18n, hint_star_mass) />
 
                     <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
                         {t!(i18n, atmosphere)}
                     </p>
-                    <NumberInput label=move || t!(i18n, albedo) value=albedo step="0.01" />
-                    <NumberInput label=move || t!(i18n, co2_fraction) value=co2_fraction step="0.0001" />
-                    <NumberInput label=move || t!(i18n, atmo_mass_factor) value=atmo_mass step="0.1" />
+                    <NumberInput label=move || t!(i18n, albedo) value=albedo step="0.01"
+                        hint=move || t!(i18n, hint_albedo) />
+                    <NumberInput label=move || t!(i18n, co2_fraction) value=co2_fraction step="0.0001"
+                        hint=move || t!(i18n, hint_co2) />
+                    <NumberInput label=move || t!(i18n, atmo_mass_factor) value=atmo_mass step="0.1"
+                        hint=move || t!(i18n, hint_atmo_mass) />
 
                     // Save row
                     <div class="flex items-center gap-2 pt-4 border-t border-edge min-w-0">
@@ -279,21 +287,26 @@ pub fn PlanetTab() -> impl IntoView {
                     <ResultRow label=move || t!(i18n, radius_earth)>
                         {move || format!("{:.3}", eff_radius.get())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, gravity)>
+                    <ResultRow label=move || t!(i18n, gravity)
+                        hint=move || t!(i18n, hint_gravity)>
                         {move || format!("{:.3}", grav())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, density)>
+                    <ResultRow label=move || t!(i18n, density)
+                        hint=move || t!(i18n, hint_density)>
                         {move || format!("{:.3}", dens())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, escape_velocity)>
+                    <ResultRow label=move || t!(i18n, escape_velocity)
+                        hint=move || t!(i18n, hint_escape_velocity)>
                         {move || format!("{:.3}", v_esc())}
                     </ResultRow>
                     {move || if is_rocky.get() {
                         Some(view! {
-                            <ResultRow label=move || t!(i18n, surface_area)>
+                            <ResultRow label=move || t!(i18n, surface_area)
+                                hint=move || t!(i18n, hint_surface_area)>
                                 {move || format!("{:.3}", s_area())}
                             </ResultRow>
-                            <ResultRow label=move || t!(i18n, volume)>
+                            <ResultRow label=move || t!(i18n, volume)
+                                hint=move || t!(i18n, hint_volume)>
                                 {move || format!("{:.3}", vol())}
                             </ResultRow>
                         })
@@ -305,41 +318,52 @@ pub fn PlanetTab() -> impl IntoView {
                     <ResultRow label=move || t!(i18n, semi_major_axis_au)>
                         {move || format!("{:.3}", semi_major.get())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, aphelion_au)>
+                    <ResultRow label=move || t!(i18n, aphelion_au)
+                        hint=move || t!(i18n, hint_aphelion)>
                         {move || format!("{:.3}", aph())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, perihelion_au)>
+                    <ResultRow label=move || t!(i18n, perihelion_au)
+                        hint=move || t!(i18n, hint_perihelion)>
                         {move || format!("{:.3}", peri())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, orbital_period)>
+                    <ResultRow label=move || t!(i18n, orbital_period)
+                        hint=move || t!(i18n, hint_orbital_period)>
                         {period_display}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, orbital_velocity)>
+                    <ResultRow label=move || t!(i18n, orbital_velocity)
+                        hint=move || t!(i18n, hint_orbital_velocity)>
                         {move || format!("{:.3}", v_orb())}
                     </ResultRow>
 
                     <SectionHeader label=move || t!(i18n, axial_tilt_section) />
-                    <ResultRow label=move || t!(i18n, tropic_latitude)>
+                    <ResultRow label=move || t!(i18n, tropic_latitude)
+                        hint=move || t!(i18n, hint_tropic)>
                         {move || format!("{:.1}", tropic())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, polar_circle)>
+                    <ResultRow label=move || t!(i18n, polar_circle)
+                        hint=move || t!(i18n, hint_polar_circle)>
                         {move || format!("{:.1}", polar())}
                     </ResultRow>
 
                     <SectionHeader label=move || t!(i18n, atmosphere) />
-                    <ResultRow label=move || t!(i18n, equilibrium_temp)>
+                    <ResultRow label=move || t!(i18n, equilibrium_temp)
+                        hint=move || t!(i18n, hint_eq_temp)>
                         {move || format!("{:.0}", t_eq())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, greenhouse)>
+                    <ResultRow label=move || t!(i18n, greenhouse)
+                        hint=move || t!(i18n, hint_greenhouse)>
                         {move || format!("+{:.0}", gh_delta())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, surface_temp)>
+                    <ResultRow label=move || t!(i18n, surface_temp)
+                        hint=move || t!(i18n, hint_surface_temp)>
                         {move || format!("{:.0}  ({:.0} °C)", t_surf(), t_surf() - 273.15)}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, surface_pressure)>
+                    <ResultRow label=move || t!(i18n, surface_pressure)
+                        hint=move || t!(i18n, hint_surface_pressure)>
                         {move || format!("{:.2}", s_press())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, scale_height)>
+                    <ResultRow label=move || t!(i18n, scale_height)
+                        hint=move || t!(i18n, hint_scale_height)>
                         {move || format!("{:.0}", sh())}
                     </ResultRow>
 
@@ -378,8 +402,10 @@ pub fn PlanetTab() -> impl IntoView {
                     }}
 
                     <SectionHeader label=move || t!(i18n, habitability) />
-                    <BoolRow label=move || t!(i18n, in_habitable_zone) value=in_hz />
-                    <BoolRow label=move || t!(i18n, habitable_tilt) value=good_tilt />
+                    <BoolRow label=move || t!(i18n, in_habitable_zone) value=in_hz
+                        hint=move || t!(i18n, hint_in_hz) />
+                    <BoolRow label=move || t!(i18n, habitable_tilt) value=good_tilt
+                        hint=move || t!(i18n, hint_habitable_tilt) />
                 </div>
             </div>
 

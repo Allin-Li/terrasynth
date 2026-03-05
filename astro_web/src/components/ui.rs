@@ -11,12 +11,19 @@ pub fn fmt_result<E: std::fmt::Display>(r: Result<f64, E>, precision: usize) -> 
 
 /// A single label/value row used throughout all result panels.
 #[component]
-pub fn ResultRow(#[prop(into)] label: ViewFn, children: Children) -> impl IntoView {
+pub fn ResultRow(
+    #[prop(into)] label: ViewFn,
+    #[prop(optional, into)] hint: Option<ViewFn>,
+    children: Children,
+) -> impl IntoView {
     view! {
         <div class="flex justify-between items-baseline gap-4 py-2.5 px-3
                     border-b border-divider/30 last:border-0
                     rounded hover:bg-edge/20">
-            <span class="text-label text-sm">{label.run()}</span>
+            <span class="text-label text-sm flex items-center gap-1">
+                {label.run()}
+                {hint.map(|h| view! { <InfoHint text=h /> })}
+            </span>
             <span class="text-heading text-sm font-mono tabular-nums text-right">
                 {children()}
             </span>
@@ -26,13 +33,20 @@ pub fn ResultRow(#[prop(into)] label: ViewFn, children: Children) -> impl IntoVi
 
 /// A label/value row where the value is a boolean rendered as pill badge.
 #[component]
-pub fn BoolRow(#[prop(into)] label: ViewFn, #[prop(into)] value: Signal<bool>) -> impl IntoView {
+pub fn BoolRow(
+    #[prop(into)] label: ViewFn,
+    #[prop(into)] value: Signal<bool>,
+    #[prop(optional, into)] hint: Option<ViewFn>,
+) -> impl IntoView {
     let i18n = crate::i18n::use_i18n();
     view! {
         <div class="flex justify-between items-baseline gap-4 py-2.5 px-3
                     border-b border-divider/30 last:border-0
                     rounded hover:bg-edge/20">
-            <span class="text-label text-sm">{label.run()}</span>
+            <span class="text-label text-sm flex items-center gap-1">
+                {label.run()}
+                {hint.map(|h| view! { <InfoHint text=h /> })}
+            </span>
             <span class=move || {
                 if value.get() {
                     "text-xs font-semibold px-2.5 py-0.5 rounded-full \
@@ -66,18 +80,65 @@ pub fn SectionHeader(#[prop(into)] label: ViewFn) -> impl IntoView {
     }
 }
 
+/// A small ⓘ button that toggles a popover with hint text.
+#[component]
+pub fn InfoHint(#[prop(into)] text: ViewFn) -> impl IntoView {
+    let open = RwSignal::new(false);
+
+    view! {
+        <span class="relative inline-flex">
+            <button
+                type="button"
+                class="text-hint hover:text-accent cursor-pointer
+                       w-4 h-4 flex items-center justify-center
+                       rounded-full text-[11px] leading-none
+                       hover:bg-accent/10 transition-colors"
+                on:click=move |ev| {
+                    ev.prevent_default();
+                    ev.stop_propagation();
+                    open.update(|v| *v = !*v);
+                }
+            >
+                "ⓘ"
+            </button>
+            <Show when=move || open.get()>
+                // Invisible overlay to close on outside click
+                <div
+                    class="fixed inset-0 z-40"
+                    on:click=move |_| open.set(false)
+                />
+                // Popover bubble
+                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50
+                            w-56 p-3 rounded-xl
+                            bg-card border border-edge shadow-xl shadow-black/40
+                            text-[12px] leading-relaxed text-label">
+                    // Arrow
+                    <div class="absolute left-1/2 -translate-x-1/2 -top-1.5
+                                w-3 h-3 rotate-45
+                                bg-card border-l border-t border-edge" />
+                    <div class="relative z-10">{text.run()}</div>
+                </div>
+            </Show>
+        </span>
+    }
+}
+
 /// A labelled numeric input bound to an `RwSignal<f64>`.
 #[component]
 pub fn NumberInput(
     #[prop(into)] label: ViewFn,
     value: RwSignal<f64>,
     #[prop(optional)] unit: Option<&'static str>,
+    #[prop(optional, into)] hint: Option<ViewFn>,
     #[prop(default = "any")] step: &'static str,
 ) -> impl IntoView {
     view! {
-        <label class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-1.5">
             <div class="flex items-baseline justify-between">
-                <span class="text-xs font-medium text-label">{label.run()}</span>
+                <span class="text-xs font-medium text-label flex items-center gap-1">
+                    {label.run()}
+                    {hint.map(|h| view! { <InfoHint text=h /> })}
+                </span>
                 {unit.map(|u| view! {
                     <span class="text-[10px] font-mono text-hint
                                  bg-edge/40 px-1.5 py-0.5 rounded">{u}</span>
@@ -99,6 +160,6 @@ pub fn NumberInput(
                     }
                 }
             />
-        </label>
+        </div>
     }
 }

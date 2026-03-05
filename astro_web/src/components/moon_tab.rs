@@ -4,7 +4,7 @@ use leptos::prelude::*;
 
 use super::compare::{CompareTable, Snapshot};
 use super::storage::{ls_f64, ls_f64_dyn};
-use super::ui::{NumberInput, ResultRow, SectionHeader};
+use super::ui::{InfoHint, NumberInput, ResultRow, SectionHeader};
 
 const R_EARTH_KM: f64 = 6_371.0;
 
@@ -89,15 +89,20 @@ pub fn MoonTab() -> impl IntoView {
                     <p class="text-[10px] font-semibold text-hint uppercase tracking-widest">
                         {t!(i18n, parent_planet)}
                     </p>
-                    <NumberInput label=move || t!(i18n, mass)    value=planet_mass    unit="M⊕" step="0.01" />
-                    <NumberInput label=move || t!(i18n, radius)  value=planet_radius  unit="R⊕" step="0.01" />
-                    <NumberInput label=move || t!(i18n, density_label) value=planet_density unit="ρ⊕" step="0.01" />
+                    <NumberInput label=move || t!(i18n, mass)    value=planet_mass    unit="M⊕" step="0.01"
+                        hint=move || t!(i18n, hint_planet_mass_moon) />
+                    <NumberInput label=move || t!(i18n, radius)  value=planet_radius  unit="R⊕" step="0.01"
+                        hint=move || t!(i18n, hint_planet_radius_moon) />
+                    <NumberInput label=move || t!(i18n, density_label) value=planet_density unit="ρ⊕" step="0.01"
+                        hint=move || t!(i18n, hint_planet_density_moon) />
 
                     <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
                         {t!(i18n, star_orbit)}
                     </p>
-                    <NumberInput label=move || t!(i18n, planet_semi_major) value=planet_orb_a unit="AU" step="0.01" />
-                    <NumberInput label=move || t!(i18n, star_mass) value=star_mass unit="M☉" step="0.01" />
+                    <NumberInput label=move || t!(i18n, planet_semi_major) value=planet_orb_a unit="AU" step="0.01"
+                        hint=move || t!(i18n, hint_planet_semi_major_moon) />
+                    <NumberInput label=move || t!(i18n, star_mass) value=star_mass unit="M☉" step="0.01"
+                        hint=move || t!(i18n, hint_star_mass_moon) />
 
                     // ── Moon entries ────────────────────────────────────────
                     <div class="flex items-center justify-between pt-2">
@@ -135,8 +140,11 @@ pub fn MoonTab() -> impl IntoView {
                                             "✕"
                                         </button>
                                     </div>
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-[10px] text-hint">{t!(i18n, radius_earth)}</span>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[10px] text-hint flex items-center gap-1">
+                                            {t!(i18n, radius_earth)}
+                                            <InfoHint text=move || t!(i18n, hint_moon_radius) />
+                                        </span>
                                         <input type="number" step="0.001"
                                             prop:value=move || mr.get().to_string()
                                             class="bg-base border border-edge rounded-lg px-3 py-1.5
@@ -146,9 +154,12 @@ pub fn MoonTab() -> impl IntoView {
                                                 if let Ok(v) = event_target_value(&ev).parse::<f64>() { mr.set(v); }
                                             }
                                         />
-                                    </label>
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-[10px] text-hint">{t!(i18n, density)}</span>
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[10px] text-hint flex items-center gap-1">
+                                            {t!(i18n, density)}
+                                            <InfoHint text=move || t!(i18n, hint_moon_density) />
+                                        </span>
                                         <input type="number" step="0.01"
                                             prop:value=move || md.get().to_string()
                                             class="bg-base border border-edge rounded-lg px-3 py-1.5
@@ -158,9 +169,12 @@ pub fn MoonTab() -> impl IntoView {
                                                 if let Ok(v) = event_target_value(&ev).parse::<f64>() { md.set(v); }
                                             }
                                         />
-                                    </label>
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-[10px] text-hint">{t!(i18n, distance_rp)}</span>
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[10px] text-hint flex items-center gap-1">
+                                            {t!(i18n, distance_rp)}
+                                            <InfoHint text=move || t!(i18n, hint_moon_distance) />
+                                        </span>
                                         <input type="number" step="0.1"
                                             prop:value=move || mdist.get().to_string()
                                             class="bg-base border border-edge rounded-lg px-3 py-1.5
@@ -170,7 +184,7 @@ pub fn MoonTab() -> impl IntoView {
                                                 if let Ok(v) = event_target_value(&ev).parse::<f64>() { mdist.set(v); }
                                             }
                                         />
-                                    </label>
+                                    </div>
                                 </div>
                             }
                         }).collect::<Vec<_>>()
@@ -250,10 +264,12 @@ pub fn MoonTab() -> impl IntoView {
                     </div>
 
                     <SectionHeader label=move || t!(i18n, stability_limits) />
-                    <ResultRow label=move || t!(i18n, hill_sphere)>
+                    <ResultRow label=move || t!(i18n, hill_sphere)
+                        hint=move || t!(i18n, hint_hill_sphere)>
                         {move || format!("{:.4} AU  ({:.0} Rp)", h_au(), h_rp())}
                     </ResultRow>
-                    <ResultRow label=move || t!(i18n, stable_orbit_limit)>
+                    <ResultRow label=move || t!(i18n, stable_orbit_limit)
+                        hint=move || t!(i18n, hint_stable_orbit)>
                         {move || format!("{:.4} AU  ({:.0} Rp)", stab_au(), stab_rp())}
                     </ResultRow>
 
@@ -283,24 +299,32 @@ pub fn MoonTab() -> impl IntoView {
 
                             view! {
                                 <SectionHeader label=move || label.clone() />
-                                <ResultRow label=move || t!(i18n, mass_earth)>
+                                <ResultRow label=move || t!(i18n, mass_earth)
+                                    hint=move || t!(i18n, hint_moon_mass)>
                                     {move || format!("{:.4}", m_mass_val())}
                                 </ResultRow>
-                                <ResultRow label=move || t!(i18n, surface_gravity)>
+                                <ResultRow label=move || t!(i18n, surface_gravity)
+                                    hint=move || t!(i18n, hint_moon_gravity)>
                                     {move || format!("{:.3}", m_grav_val())}
                                 </ResultRow>
-                                <ResultRow label=move || t!(i18n, angular_size)>
+                                <ResultRow label=move || t!(i18n, angular_size)
+                                    hint=move || t!(i18n, hint_angular_size)>
                                     {move || format_ang(m_ang())}
                                 </ResultRow>
-                                <ResultRow label=move || t!(i18n, orbital_period_days)>
+                                <ResultRow label=move || t!(i18n, orbital_period_days)
+                                    hint=move || t!(i18n, hint_moon_period)>
                                     {move || format!("{:.1}", m_period())}
                                 </ResultRow>
-                                <ResultRow label=move || t!(i18n, roche_limit)>
+                                <ResultRow label=move || t!(i18n, roche_limit)
+                                    hint=move || t!(i18n, hint_roche_limit)>
                                     {move || format!("{:.2}", m_roche())}
                                 </ResultRow>
                                 <div class="flex justify-between items-baseline gap-4 py-2.5 px-3
                                             border-b border-divider/30 rounded hover:bg-edge/20">
-                                    <span class="text-label text-sm">{t!(i18n, orbit_valid)}</span>
+                                    <span class="text-label text-sm flex items-center gap-1">
+                                        {t!(i18n, orbit_valid)}
+                                        <InfoHint text=move || t!(i18n, hint_orbit_valid) />
+                                    </span>
                                     <span class=move || {
                                         if orbit_ok() {
                                             "text-xs font-semibold px-2.5 py-0.5 rounded-full \
