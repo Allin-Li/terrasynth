@@ -1,4 +1,14 @@
-use astro_lib::*;
+use astro_lib::atmosphere::{
+    atmosphere_retention, equilibrium_temperature, exosphere_temperature_estimate,
+    greenhouse_effect, scale_height, surface_pressure_estimate, surface_temperature,
+};
+use astro_lib::habitability::{is_habitable_tilt, is_in_habitable_zone};
+use astro_lib::orbit::{aphelion, orbital_period, orbital_velocity, perihelion, polar_circle, tropic_latitude};
+use astro_lib::planet::{
+    density, escape_velocity, gravity, has_solid_surface, planet_radius_auto, planet_type,
+    surface_area, volume,
+};
+use astro_lib::star::{habitable_zone, luminosity, radius, temperature};
 use crate::i18n::*;
 use leptos::prelude::*;
 

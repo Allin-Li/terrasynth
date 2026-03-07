@@ -1,4 +1,11 @@
-use astro_lib::*;
+use astro_lib::binary::{binary_orbital_period, combined_luminosity, p_type_critical_radius, s_type_critical_radius};
+use astro_lib::error::StarErr;
+use astro_lib::flora::{pigment_display_color, predict_flora_pigment};
+use astro_lib::habitability::is_habitable_star_mass;
+use astro_lib::star::{
+    frost_line, habitable_zone, lifetime, luminosity, peak_wavelength, radius, spectral_class,
+    system_boundaries, temperature, SpectralClass,
+};
 use crate::i18n::*;
 use leptos::prelude::*;
 

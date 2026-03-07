@@ -1,4 +1,8 @@
-use astro_lib::*;
+use astro_lib::moon::{
+    angular_size_arcmin, are_moons_stable, hill_sphere_au, hill_sphere_planet_radii,
+    is_moon_orbit_valid, moon_gravity, moon_mass, moon_orbital_period_days, near_resonance,
+    roche_limit_planet_radii, stable_orbit_limit,
+};
 use crate::i18n::*;
 use leptos::prelude::*;
 
