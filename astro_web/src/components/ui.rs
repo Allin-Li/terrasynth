@@ -80,24 +80,71 @@ pub fn SectionHeader(#[prop(into)] label: ViewFn) -> impl IntoView {
     }
 }
 
+/// Popover position computed from the button's bounding rect.
+#[derive(Clone, Copy, Default)]
+struct PopoverPos {
+    /// Fixed `left` for the popover box (px)
+    left: f64,
+    /// Fixed `top` for the popover box (px)
+    top: f64,
+    /// `left` for the arrow inside the popover box (px, from popover left edge)
+    arrow_left: f64,
+}
+
 /// A small ⓘ button that toggles a popover with hint text.
+/// The popover is rendered with `position: fixed` and its horizontal position
+/// is clamped to the viewport so it never clips on mobile.
 #[component]
 pub fn InfoHint(#[prop(into)] text: ViewFn) -> impl IntoView {
     let open = RwSignal::new(false);
+    let pos = RwSignal::new(PopoverPos::default());
+    let button_ref = NodeRef::<leptos::html::Button>::new();
+
+    let toggle = move |ev: web_sys::MouseEvent| {
+        ev.prevent_default();
+        ev.stop_propagation();
+
+        if !open.get() {
+            if let Some(btn) = button_ref.get() {
+                let rect = btn.get_bounding_client_rect();
+                let btn_center_x = rect.left() + rect.width() / 2.0;
+                let btn_bottom = rect.bottom();
+
+                const POPOVER_W: f64 = 224.0; // w-56 = 14rem = 224px
+                const MARGIN: f64 = 8.0;
+
+                let vw = web_sys::window()
+                    .and_then(|w| w.inner_width().ok())
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(375.0);
+
+                let natural_left = btn_center_x - POPOVER_W / 2.0;
+                let clamped_left = natural_left
+                    .max(MARGIN)
+                    .min(vw - POPOVER_W - MARGIN);
+
+                pos.set(PopoverPos {
+                    left: clamped_left,
+                    top: btn_bottom + 8.0,
+                    // how far the button centre is from the popover's left edge
+                    arrow_left: btn_center_x - clamped_left,
+                });
+            }
+        }
+
+        open.update(|v| *v = !*v);
+    };
 
     view! {
         <span class="relative inline-flex">
             <button
+                node_ref=button_ref
                 type="button"
                 class="text-hint hover:text-accent cursor-pointer
                        w-4 h-4 flex items-center justify-center
                        rounded-full text-[11px] leading-none
                        hover:bg-accent/10 transition-colors"
-                on:click=move |ev| {
-                    ev.prevent_default();
-                    ev.stop_propagation();
-                    open.update(|v| *v = !*v);
-                }
+                on:click=toggle
             >
                 "ⓘ"
             </button>
@@ -107,15 +154,29 @@ pub fn InfoHint(#[prop(into)] text: ViewFn) -> impl IntoView {
                     class="fixed inset-0 z-40"
                     on:click=move |_| open.set(false)
                 />
-                // Popover bubble
-                <div class="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50
-                            w-56 p-3 rounded-xl
+                // Popover bubble — fixed position, clamped to viewport
+                <div
+                    class="fixed z-50 w-56 p-3 rounded-xl
                             bg-card border border-edge shadow-xl shadow-black/40
-                            text-[12px] leading-relaxed text-label">
-                    // Arrow
-                    <div class="absolute left-1/2 -translate-x-1/2 -top-1.5
-                                w-3 h-3 rotate-45
-                                bg-card border-l border-t border-edge" />
+                            text-[12px] leading-relaxed text-label"
+                    style=move || {
+                        let p = pos.get();
+                        format!("left:{}px;top:{}px", p.left, p.top)
+                    }
+                >
+                    // Arrow — centered on the button, not on the popover
+                    <div
+                        class="absolute w-3 h-3 bg-card border-l border-t border-edge"
+                        style=move || {
+                            let p = pos.get();
+                            // arrow_left is the button centre from popover left edge;
+                            // subtract half the arrow width (6px) to centre it
+                            format!(
+                                "left:{}px;top:-6px;transform:rotate(45deg)",
+                                p.arrow_left - 6.0
+                            )
+                        }
+                    />
                     <div class="relative z-10">{text.run()}</div>
                 </div>
             </Show>
