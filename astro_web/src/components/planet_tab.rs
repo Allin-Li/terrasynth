@@ -311,27 +311,27 @@ pub fn PlanetTab() -> impl IntoView {
                                     .unwrap_or(false);
 
                                 let mut rows = vec![
-                                    ("Type", match planet_type(m) {
+                                    (t_string!(i18n, planet_type_label).to_owned(), match planet_type(m) {
                                         astro_lib::planet::PlanetType::Rocky       => t_string!(i18n, type_rocky).to_owned(),
                                         astro_lib::planet::PlanetType::SubNeptune  => t_string!(i18n, type_sub_neptune).to_owned(),
                                         astro_lib::planet::PlanetType::GasGiant    => t_string!(i18n, type_gas_giant).to_owned(),
                                         astro_lib::planet::PlanetType::SuperJovian => t_string!(i18n, type_super_jovian).to_owned(),
                                     }),
-                                    ("Radius  R⊕",               format!("{:.3}", r)),
-                                    ("Gravity  g⊕",              format!("{:.3}", gravity(m, r))),
-                                    ("Density  ρ⊕",              format!("{:.3}", density(m, r))),
-                                    ("Escape velocity  v⊕",      format!("{:.3}", escape_velocity(m, r))),
-                                    ("Surface area  A⊕",         format!("{:.3}", surface_area(r))),
-                                    ("Volume  V⊕",               format!("{:.3}", volume(r))),
-                                    ("Semi-major axis  AU",       format!("{:.3}", a)),
-                                    ("Aphelion  AU",              format!("{:.3}", aphelion(a, e))),
-                                    ("Perihelion  AU",            format!("{:.3}", perihelion(a, e))),
-                                    ("Orbital period",            format!("{:.3} yr  ({:.1} days)", p.years, p.days)),
-                                    ("Orbital velocity  v⊕",     format!("{:.3}", orbital_velocity(a, sm))),
-                                    ("Tropic latitude  °",        format!("{:.1}", tropic_latitude(t))),
-                                    ("Polar circle  °",           format!("{:.1}", polar_circle(t))),
-                                    ("In habitable zone",         if hz_bool { "✓" } else { "✗" }.to_string()),
-                                    ("Habitable tilt  (0–80°)",   if is_habitable_tilt(t) { "✓" } else { "✗" }.to_string()),
+                                    (t_string!(i18n, radius_earth).to_owned(),      format!("{:.3}", r)),
+                                    (t_string!(i18n, gravity).to_owned(),           format!("{:.3}", gravity(m, r))),
+                                    (t_string!(i18n, density).to_owned(),           format!("{:.3}", density(m, r))),
+                                    (t_string!(i18n, escape_velocity).to_owned(),   format!("{:.3}", escape_velocity(m, r))),
+                                    (t_string!(i18n, surface_area).to_owned(),      format!("{:.3}", surface_area(r))),
+                                    (t_string!(i18n, volume).to_owned(),            format!("{:.3}", volume(r))),
+                                    (t_string!(i18n, semi_major_axis_au).to_owned(), format!("{:.3}", a)),
+                                    (t_string!(i18n, aphelion_au).to_owned(),       format!("{:.3}", aphelion(a, e))),
+                                    (t_string!(i18n, perihelion_au).to_owned(),     format!("{:.3}", perihelion(a, e))),
+                                    (t_string!(i18n, orbital_period).to_owned(),    format!("{:.3} yr  ({:.1} days)", p.years, p.days)),
+                                    (t_string!(i18n, orbital_velocity).to_owned(),  format!("{:.3}", orbital_velocity(a, sm))),
+                                    (t_string!(i18n, tropic_latitude).to_owned(),   format!("{:.1}", tropic_latitude(t))),
+                                    (t_string!(i18n, polar_circle).to_owned(),      format!("{:.1}", polar_circle(t))),
+                                    (t_string!(i18n, in_habitable_zone).to_owned(), if hz_bool { "✓" } else { "✗" }.to_string()),
+                                    (t_string!(i18n, habitable_tilt).to_owned(),    if is_habitable_tilt(t) { "✓" } else { "✗" }.to_string()),
                                 ];
 
                                 // atmosphere snapshot rows
@@ -346,9 +346,9 @@ pub fn PlanetTab() -> impl IntoView {
                                 let sp = surface_pressure_estimate(g, atmo_mass.get());
                                 let ghd = greenhouse_effect(sp, co2_fraction.get());
                                 let ts = surface_temperature(teq, ghd);
-                                rows.push(("T equilibrium  K", format!("{:.0}", teq)));
-                                rows.push(("T surface  K",     format!("{:.0}", ts)));
-                                rows.push(("Surface pressure  atm", format!("{:.2}", sp)));
+                                rows.push((t_string!(i18n, equilibrium_temp).to_owned(), format!("{:.0}", teq)));
+                                rows.push((t_string!(i18n, surface_temp).to_owned(),     format!("{:.0}", ts)));
+                                rows.push((t_string!(i18n, surface_pressure).to_owned(), format!("{:.2}", sp)));
 
                                 let ret = atmosphere_retention(ve, texo);
                                 let gases = [
@@ -358,7 +358,7 @@ pub fn PlanetTab() -> impl IntoView {
                                 ];
                                 let retained: Vec<&str> = gases.iter()
                                     .filter(|(_, ok)| *ok).map(|(n, _)| *n).collect();
-                                rows.push(("Retained gases", retained.join(", ")));
+                                rows.push((t_string!(i18n, gas_retention).to_owned(), retained.join(", ")));
 
                                 let snap = Snapshot { name: world_name.get(), rows };
                                 snapshots.update(|v| v.push(snap));

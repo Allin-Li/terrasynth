@@ -161,6 +161,9 @@
     "moon": "Moon",
     "ratio_label": "ratio",
 
+    "planet_type_label": "Type",
+    "star_b_lum": "Star B, L☉",
+
     "hint_star_mass_input": "Star mass relative to the Sun. Determines everything: luminosity, temperature, lifetime, habitable zone. The Sun = 1. Red dwarfs 0.08–0.5, orange dwarfs 0.5–0.8, solar-type 0.8–1.2, hot stars 1.5+. Stars below 0.08 M☉ are brown dwarfs; above ~150 M☉ they are unstable.",
     "hint_star_b_mass": "Mass of the companion star. In binary systems, the secondary is usually less massive than the primary. Affects the combined luminosity and orbital dynamics of the pair.",
     "hint_separation": "Average distance between the two stars in the binary pair. Wider separation (>50 AU) makes S-type planetary orbits more stable. Close binaries (<1 AU) favor P-type (circumbinary) orbits.",

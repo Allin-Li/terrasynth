@@ -352,9 +352,9 @@ pub fn MoonTab() -> impl IntoView {
                                 let h_au_val = hill_sphere_au(oa, pm, sm);
                                 let h_rp_val = hill_sphere_planet_radii(oa, pm, sm, pr);
 
-                                let mut rows: Vec<(&str, String)> = vec![
-                                    ("Hill sphere", format!("{:.4} AU  ({:.0} Rp)", h_au_val, h_rp_val)),
-                                    ("Stable orbit limit", format!("{:.4} AU  ({:.0} Rp)",
+                                let mut rows: Vec<(String, String)> = vec![
+                                    (t_string!(i18n, hill_sphere).to_owned(),        format!("{:.4} AU  ({:.0} Rp)", h_au_val, h_rp_val)),
+                                    (t_string!(i18n, stable_orbit_limit).to_owned(), format!("{:.4} AU  ({:.0} Rp)",
                                         stable_orbit_limit(h_au_val), stable_orbit_limit(h_rp_val))),
                                 ];
 
@@ -366,17 +366,15 @@ pub fn MoonTab() -> impl IntoView {
                                     let mass_val = moon_mass(mr, md);
                                     let ang = angular_size_arcmin(mr * R_EARTH_KM, dst * R_EARTH_KM);
                                     let label_prefix = if moon_list.len() > 1 {
-                                        format!("M{} ", i + 1)
+                                        format!("{} {} ", t_string!(i18n, moon), i + 1)
                                     } else {
                                         String::new()
                                     };
-                                    // Use leaked strings so we get &'static str for Snapshot rows
-                                    let lk = |s: String| -> &'static str { Box::leak(s.into_boxed_str()) };
-                                    rows.push((lk(format!("{label_prefix}Mass  M⊕")), format!("{:.4}", mass_val)));
-                                    rows.push((lk(format!("{label_prefix}Gravity  g⊕")), format!("{:.3}", moon_gravity(mass_val, mr))));
-                                    rows.push((lk(format!("{label_prefix}Angular size")), format_ang(ang)));
-                                    rows.push((lk(format!("{label_prefix}Period  days")), format!("{:.1}", moon_orbital_period_days(dst, pm))));
-                                    rows.push((lk(format!("{label_prefix}Roche  Rp")), format!("{:.2}", roche_limit_planet_radii(pd, md))));
+                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, mass_earth)),         format!("{:.4}", mass_val)));
+                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, surface_gravity)),    format!("{:.3}", moon_gravity(mass_val, mr))));
+                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, angular_size)),       format_ang(ang)));
+                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, orbital_period_days)), format!("{:.1}", moon_orbital_period_days(dst, pm))));
+                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, roche_limit)),        format!("{:.2}", roche_limit_planet_radii(pd, md))));
                                 }
 
                                 let snap = Snapshot { name: world_name.get(), rows };

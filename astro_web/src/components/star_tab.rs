@@ -201,27 +201,27 @@ pub fn StarTab() -> impl IntoView {
                             on:click=move |_| {
                                 let m = mass.get();
                                 let mut rows = vec![
-                                    ("Luminosity  L☉",         fmt_result(luminosity(m), 3)),
-                                    ("Temperature  T☉ (class)", match temperature(m) {
+                                    (t_string!(i18n, luminosity).to_owned(),        fmt_result(luminosity(m), 3)),
+                                    (t_string!(i18n, temperature_class).to_owned(), match temperature(m) {
                                         Ok(t) => format!("{t:.3}  ({})", spectral_class(t)),
                                         Err(e) => e.to_string(),
                                     }),
-                                    ("Radius  R☉", fmt_result(
+                                    (t_string!(i18n, radius_solar).to_owned(), fmt_result(
                                         luminosity(m).and_then(|l|
                                             temperature(m).map(|t| radius(l, t))),
                                         3
                                     )),
-                                    ("Lifetime  τ☉",            fmt_result(lifetime(m), 2)),
-                                    ("Peak wavelength  nm",      fmt_result(temperature(m).map(peak_wavelength), 1)),
-                                    ("HZ inner-outer  AU",    match luminosity(m) {
+                                    (t_string!(i18n, lifetime).to_owned(),        fmt_result(lifetime(m), 2)),
+                                    (t_string!(i18n, peak_wavelength).to_owned(), fmt_result(temperature(m).map(peak_wavelength), 1)),
+                                    (t_string!(i18n, hz_inner_outer).to_owned(), match luminosity(m) {
                                         Ok(l) => {
                                             let hz = habitable_zone(l);
                                             format!("{:.2} – {:.2}", hz.inner, hz.outer)
                                         }
                                         Err(e) => e.to_string(),
                                     }),
-                                    ("Frost line  AU",           fmt_result(luminosity(m).map(frost_line), 2)),
-                                    ("Flora pigment", match temperature(m) {
+                                    (t_string!(i18n, frost_line).to_owned(), fmt_result(luminosity(m).map(frost_line), 2)),
+                                    (t_string!(i18n, predicted_pigment).to_owned(), match temperature(m) {
                                         Ok(t) => {
                                             let pred = predict_flora_pigment(spectral_class(t), peak_wavelength(t));
                                             match pred.pigment {
@@ -239,11 +239,11 @@ pub fn StarTab() -> impl IntoView {
 
                                 if binary_mode.get() {
                                     let mb = mass_b.get();
-                                    rows.push(("Star B  L☉", fmt_result(luminosity(mb), 3)));
-                                    rows.push(("Binary period  yr", format!("{:.1}", binary_orbital_period(bin_sep.get(), m, mb))));
-                                    rows.push(("Combined  L☉", fmt_result(combined_luminosity(m, mb), 3)));
-                                    rows.push(("S-type max  AU", format!("{:.2}", s_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
-                                    rows.push(("P-type min  AU", format!("{:.2}", p_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
+                                    rows.push((t_string!(i18n, star_b_lum).to_owned(), fmt_result(luminosity(mb), 3)));
+                                    rows.push((t_string!(i18n, binary_period).to_owned(), format!("{:.1}", binary_orbital_period(bin_sep.get(), m, mb))));
+                                    rows.push((t_string!(i18n, combined_luminosity).to_owned(), fmt_result(combined_luminosity(m, mb), 3)));
+                                    rows.push((t_string!(i18n, s_type_max_orbit).to_owned(), format!("{:.2}", s_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
+                                    rows.push((t_string!(i18n, p_type_min_orbit).to_owned(), format!("{:.2}", p_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
                                 }
 
                                 let snap = Snapshot { name: world_name.get(), rows };

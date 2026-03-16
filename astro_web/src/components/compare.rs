@@ -6,7 +6,7 @@ use leptos::prelude::*;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Snapshot {
     pub name: String,
-    pub rows: Vec<(&'static str, String)>,
+    pub rows: Vec<(String, String)>,
 }
 
 // ── Markdown export ───────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ pub fn CompareTable(snapshots: RwSignal<Vec<Snapshot>>) -> impl IntoView {
                                                 .map(|s| s.rows.len())
                                                 .unwrap_or(0);
                                             (0..n_rows).map(|row_i| {
-                                                let label = snaps[0].rows[row_i].0;
+                                                let label = snaps[0].rows[row_i].0.clone();
                                                 let vals: Vec<String> = snaps
                                                     .iter()
                                                     .map(|s| {
