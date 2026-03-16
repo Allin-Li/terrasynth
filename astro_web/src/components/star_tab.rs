@@ -224,7 +224,14 @@ pub fn StarTab() -> impl IntoView {
                                     ("Flora pigment", match temperature(m) {
                                         Ok(t) => {
                                             let pred = predict_flora_pigment(spectral_class(t), peak_wavelength(t));
-                                            format!("{}", pred.pigment)
+                                            match pred.pigment {
+                                                astro_lib::flora::FloraPigment::Green     => t_string!(i18n, pigment_green).to_owned(),
+                                                astro_lib::flora::FloraPigment::Red       => t_string!(i18n, pigment_red).to_owned(),
+                                                astro_lib::flora::FloraPigment::Orange    => t_string!(i18n, pigment_orange).to_owned(),
+                                                astro_lib::flora::FloraPigment::Blue      => t_string!(i18n, pigment_blue).to_owned(),
+                                                astro_lib::flora::FloraPigment::Black     => t_string!(i18n, pigment_black).to_owned(),
+                                                astro_lib::flora::FloraPigment::UvHostile => t_string!(i18n, pigment_uv_hostile).to_owned(),
+                                            }
                                         }
                                         Err(e) => e.to_string(),
                                     }),
@@ -381,17 +388,38 @@ pub fn StarTab() -> impl IntoView {
                                             style:background-color=hex
                                         />
                                         <span class="text-heading text-sm font-mono">
-                                            {format!("{}", pred.pigment)}
+                                            {match pred.pigment {
+                                                astro_lib::flora::FloraPigment::Green     => t_string!(i18n, pigment_green),
+                                                astro_lib::flora::FloraPigment::Red       => t_string!(i18n, pigment_red),
+                                                astro_lib::flora::FloraPigment::Orange    => t_string!(i18n, pigment_orange),
+                                                astro_lib::flora::FloraPigment::Blue      => t_string!(i18n, pigment_blue),
+                                                astro_lib::flora::FloraPigment::Black     => t_string!(i18n, pigment_black),
+                                                astro_lib::flora::FloraPigment::UvHostile => t_string!(i18n, pigment_uv_hostile),
+                                            }}
                                         </span>
                                     </div>
                                 </div>
                                 <ResultRow label=move || t!(i18n, absorbed_range)
                                     hint=move || t!(i18n, hint_absorbed_range)>
-                                    {pred.absorbed_range.to_string()}
+                                    {match sc {
+                                        SpectralClass::O | SpectralClass::B => t_string!(i18n, flora_absorbed_ob),
+                                        SpectralClass::A => t_string!(i18n, flora_absorbed_a),
+                                        SpectralClass::F => t_string!(i18n, flora_absorbed_f),
+                                        SpectralClass::G => t_string!(i18n, flora_absorbed_g),
+                                        SpectralClass::K => t_string!(i18n, flora_absorbed_k),
+                                        SpectralClass::M => t_string!(i18n, flora_absorbed_m),
+                                    }}
                                 </ResultRow>
                                 <ResultRow label=move || t!(i18n, reflected_color)
                                     hint=move || t!(i18n, hint_reflected_color)>
-                                    {pred.reflected_color.to_string()}
+                                    {match sc {
+                                        SpectralClass::O | SpectralClass::B => t_string!(i18n, flora_reflected_ob),
+                                        SpectralClass::A => t_string!(i18n, flora_reflected_a),
+                                        SpectralClass::F => t_string!(i18n, flora_reflected_f),
+                                        SpectralClass::G => t_string!(i18n, flora_reflected_g),
+                                        SpectralClass::K => t_string!(i18n, flora_reflected_k),
+                                        SpectralClass::M => t_string!(i18n, flora_reflected_m),
+                                    }}
                                 </ResultRow>
                                 <p class="text-xs text-hint leading-relaxed px-3 py-2">
                                     {match sc {

@@ -502,7 +502,7 @@ pub fn MoonTab() -> impl IntoView {
                                 let resonance = near_resonance(p_inner, p_outer);
                                 let ratio = d_outer / d_inner;
                                 let label: &'static str = Box::leak(
-                                    format!("Moon {} <-> Moon {}", i + 1, j + 1).into_boxed_str()
+                                    format!("{} {} <-> {} {}", t_string!(i18n, moon), i + 1, t_string!(i18n, moon), j + 1).into_boxed_str()
                                 );
 
                                 pair_views.push(view! {
@@ -510,7 +510,7 @@ pub fn MoonTab() -> impl IntoView {
                                                 border-b border-divider/30 rounded hover:bg-edge/20">
                                         <span class="text-label text-sm flex-1">{label}</span>
                                         <span class="text-[10px] font-mono text-hint">
-                                            {format!("ratio {ratio:.2}")}
+                                            {format!("{} {ratio:.2}", t_string!(i18n, ratio_label))}
                                         </span>
                                         <span class=if stable_pair {
                                             "text-[10px] font-semibold px-2 py-0.5 rounded-full \

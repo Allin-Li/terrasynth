@@ -139,7 +139,12 @@ pub fn PlanetTab() -> impl IntoView {
                         // planet type badge
                         <span class="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full
                                      bg-accent/15 text-accent ring-1 ring-accent/20">
-                            {move || format!("{}", ptype.get())}
+                            {move || match ptype.get() {
+                                astro_lib::planet::PlanetType::Rocky       => t_string!(i18n, type_rocky),
+                                astro_lib::planet::PlanetType::SubNeptune  => t_string!(i18n, type_sub_neptune),
+                                astro_lib::planet::PlanetType::GasGiant    => t_string!(i18n, type_gas_giant),
+                                astro_lib::planet::PlanetType::SuperJovian => t_string!(i18n, type_super_jovian),
+                            }}
                         </span>
                     </div>
 
@@ -306,7 +311,12 @@ pub fn PlanetTab() -> impl IntoView {
                                     .unwrap_or(false);
 
                                 let mut rows = vec![
-                                    ("Type",                     format!("{}", planet_type(m))),
+                                    ("Type", match planet_type(m) {
+                                        astro_lib::planet::PlanetType::Rocky       => t_string!(i18n, type_rocky).to_owned(),
+                                        astro_lib::planet::PlanetType::SubNeptune  => t_string!(i18n, type_sub_neptune).to_owned(),
+                                        astro_lib::planet::PlanetType::GasGiant    => t_string!(i18n, type_gas_giant).to_owned(),
+                                        astro_lib::planet::PlanetType::SuperJovian => t_string!(i18n, type_super_jovian).to_owned(),
+                                    }),
                                     ("Radius  R⊕",               format!("{:.3}", r)),
                                     ("Gravity  g⊕",              format!("{:.3}", gravity(m, r))),
                                     ("Density  ρ⊕",              format!("{:.3}", density(m, r))),
@@ -371,7 +381,12 @@ pub fn PlanetTab() -> impl IntoView {
                         </h2>
                         <span class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full
                                      bg-edge/40 text-hint ring-1 ring-edge">
-                            {move || format!("{}", ptype.get())}
+                            {move || match ptype.get() {
+                                astro_lib::planet::PlanetType::Rocky       => t_string!(i18n, type_rocky),
+                                astro_lib::planet::PlanetType::SubNeptune  => t_string!(i18n, type_sub_neptune),
+                                astro_lib::planet::PlanetType::GasGiant    => t_string!(i18n, type_gas_giant),
+                                astro_lib::planet::PlanetType::SuperJovian => t_string!(i18n, type_super_jovian),
+                            }}
                         </span>
                     </div>
 

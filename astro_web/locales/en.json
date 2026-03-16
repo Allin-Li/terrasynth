@@ -132,6 +132,35 @@
     "from_planet": "from planet",
     "custom": "custom",
 
+    "type_rocky": "Rocky",
+    "type_sub_neptune": "Sub-Neptune",
+    "type_gas_giant": "Gas Giant",
+    "type_super_jovian": "Super-Jovian",
+
+    "pigment_green": "Green",
+    "pigment_red": "Red",
+    "pigment_orange": "Orange",
+    "pigment_blue": "Blue",
+    "pigment_black": "Black",
+    "pigment_uv_hostile": "UV-hostile",
+
+    "flora_absorbed_ob": "N/A",
+    "flora_absorbed_a": "UV, blue, green (300-550 nm)",
+    "flora_absorbed_f": "Blue, green (400-550 nm)",
+    "flora_absorbed_g": "Red (600-700 nm) + Blue (400-500 nm)",
+    "flora_absorbed_k": "Orange, red, green (500-750 nm)",
+    "flora_absorbed_m": "All visible + near-IR (400-1000 nm)",
+
+    "flora_reflected_ob": "N/A",
+    "flora_reflected_a": "Red / orange",
+    "flora_reflected_f": "Yellow-orange",
+    "flora_reflected_g": "Green",
+    "flora_reflected_k": "Blue-violet",
+    "flora_reflected_m": "Very dark / black",
+
+    "moon": "Moon",
+    "ratio_label": "ratio",
+
     "hint_star_mass_input": "Star mass relative to the Sun. Determines everything: luminosity, temperature, lifetime, habitable zone. The Sun = 1. Red dwarfs 0.08–0.5, orange dwarfs 0.5–0.8, solar-type 0.8–1.2, hot stars 1.5+. Stars below 0.08 M☉ are brown dwarfs; above ~150 M☉ they are unstable.",
     "hint_star_b_mass": "Mass of the companion star. In binary systems, the secondary is usually less massive than the primary. Affects the combined luminosity and orbital dynamics of the pair.",
     "hint_separation": "Average distance between the two stars in the binary pair. Wider separation (>50 AU) makes S-type planetary orbits more stable. Close binaries (<1 AU) favor P-type (circumbinary) orbits.",
