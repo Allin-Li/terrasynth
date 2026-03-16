@@ -1,4 +1,6 @@
 use leptos::prelude::*;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 
 /// Keep only digits, dots, commas, and leading minus — strip everything else.
 pub fn filter_numeric(s: &str) -> String {
@@ -108,6 +110,24 @@ pub fn InfoHint(#[prop(into)] text: ViewFn) -> impl IntoView {
     let open = RwSignal::new(false);
     let pos = RwSignal::new(PopoverPos::default());
     let button_ref = NodeRef::<leptos::html::Button>::new();
+
+    // Close the popover on scroll so it doesn't float away from its button.
+    Effect::new(move |_| {
+        if !open.get() { return; }
+        let close = Closure::<dyn Fn()>::new(move || open.set(false));
+        if let Some(win) = web_sys::window() {
+            win.add_event_listener_with_callback("scroll", close.as_ref().unchecked_ref()).ok();
+            let f = close.as_ref().unchecked_ref::<js_sys::Function>().clone();
+            close.forget();
+            on_cleanup(move || {
+                if let Some(w) = web_sys::window() {
+                    w.remove_event_listener_with_callback("scroll", &f).ok();
+                }
+            });
+        } else {
+            close.forget();
+        }
+    });
 
     let toggle = move |ev: web_sys::MouseEvent| {
         ev.prevent_default();

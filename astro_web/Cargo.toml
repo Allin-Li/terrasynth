@@ -9,7 +9,9 @@ leptos = { workspace = true }
 leptos_meta = "0.8"
 leptos_i18n = { version = "0.6", features = ["csr"] }
 serde = { version = "1", features = ["derive"] }
-web-sys = { version = "0.3", features = ["Window", "Storage", "Element", "DomRect"] }
+web-sys = { version = "0.3", features = ["Window", "Storage", "Element", "DomRect", "EventTarget"] }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
 
 [build-dependencies.leptos_i18n_build]
 version = "0.6"
