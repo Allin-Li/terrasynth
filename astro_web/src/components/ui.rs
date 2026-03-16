@@ -193,6 +193,22 @@ pub fn NumberInput(
     #[prop(optional, into)] hint: Option<ViewFn>,
     #[prop(default = "any")] step: &'static str,
 ) -> impl IntoView {
+    let _ = step; // kept for API compat, not used with type="text"
+
+    // Local string signal so intermediate input like "1." or "1," isn't clobbered.
+    let text = RwSignal::new(value.get().to_string());
+
+    // Sync external value changes → text (but don't overwrite when text already
+    // represents the same number, e.g. "1." and "1," both parse to 1.0).
+    Effect::new(move |_| {
+        let v = value.get();
+        let current = text.get_untracked();
+        let current_parsed = current.replace(',', ".").parse::<f64>().ok();
+        if current_parsed != Some(v) {
+            text.set(v.to_string());
+        }
+    });
+
     view! {
         <div class="flex flex-col gap-1.5">
             <div class="flex items-baseline justify-between">
@@ -206,9 +222,9 @@ pub fn NumberInput(
                 })}
             </div>
             <input
-                type="number"
-                step=step
-                prop:value=move || value.get().to_string()
+                type="text"
+                inputmode="decimal"
+                prop:value=move || text.get()
                 class="bg-inset border border-edge rounded-lg
                        px-3 py-2 text-heading text-sm font-mono
                        outline-none
@@ -216,7 +232,10 @@ pub fn NumberInput(
                        hover:border-divider
                        placeholder:text-hint w-full"
                 on:input=move |ev| {
-                    if let Ok(v) = event_target_value(&ev).parse::<f64>() {
+                    let raw = event_target_value(&ev);
+                    text.set(raw.clone());
+                    let sanitized = raw.replace(',', ".");
+                    if let Ok(v) = sanitized.parse::<f64>() {
                         value.set(v);
                     }
                 }

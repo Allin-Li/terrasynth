@@ -24,15 +24,40 @@ pub fn PlanetTab() -> impl IntoView {
     let planet_mass   = ls_f64("planet_mass",   1.0);
     let use_manual_r  = ls_bool("planet_use_manual_r", false);
     let manual_radius = ls_f64("planet_manual_radius", 1.0);
-    let star_mass     = ls_f64("planet_star_mass", 1.0);
     let semi_major    = ls_f64("planet_semi_major", 1.0);
     let eccentricity  = ls_f64("planet_eccentricity", 0.017);
     let axial_tilt    = ls_f64("planet_axial_tilt", 23.4);
+
+    // star mass: linked from star tab by default, or custom override
+    let shared_star_mass  = ls_f64("star_mass", 1.0);
+    let custom_star       = ls_bool("planet_custom_star", false);
+    let custom_star_mass  = ls_f64("planet_custom_star_mass", 1.0);
+    let star_mass = Signal::derive(move || {
+        if custom_star.get() { custom_star_mass.get() } else { shared_star_mass.get() }
+    });
 
     // atmosphere inputs
     let albedo         = ls_f64("planet_albedo", 0.3);
     let co2_fraction   = ls_f64("planet_co2_fraction", 0.0004);
     let atmo_mass      = ls_f64("planet_atmo_mass", 1.0);
+
+    // Local text signals for inline inputs (prevent prop:value clobbering "1." → "1")
+    let manual_radius_text = RwSignal::new(manual_radius.get().to_string());
+    Effect::new(move |_| {
+        let v = manual_radius.get();
+        let cur = manual_radius_text.get_untracked();
+        if cur.replace(',', ".").parse::<f64>().ok() != Some(v) {
+            manual_radius_text.set(v.to_string());
+        }
+    });
+    let custom_star_text = RwSignal::new(custom_star_mass.get().to_string());
+    Effect::new(move |_| {
+        let v = custom_star_mass.get();
+        let cur = custom_star_text.get_untracked();
+        if cur.replace(',', ".").parse::<f64>().ok() != Some(v) {
+            custom_star_text.set(v.to_string());
+        }
+    });
 
     // ── derived ─────────────────────────────────────────────────────────────
     let ptype = Signal::derive(move || planet_type(planet_mass.get()));
@@ -149,15 +174,18 @@ pub fn PlanetTab() -> impl IntoView {
                         {move || if use_manual_r.get() {
                             view! {
                                 <input
-                                    type="number" step="0.01"
-                                    prop:value=move || manual_radius.get().to_string()
+                                    type="text" inputmode="decimal"
+                                    prop:value=move || manual_radius_text.get()
                                     class="bg-inset border border-edge rounded-lg
                                            px-3 py-2 text-heading text-sm font-mono
                                            outline-none
                                            focus:border-accent focus:ring-1 focus:ring-accent/40
                                            hover:border-divider w-full"
                                     on:input=move |ev| {
-                                        if let Ok(v) = event_target_value(&ev).parse::<f64>() {
+                                        let raw = event_target_value(&ev);
+                                        manual_radius_text.set(raw.clone());
+                                        let sanitized = raw.replace(',', ".");
+                                        if let Ok(v) = sanitized.parse::<f64>() {
                                             manual_radius.set(v);
                                         }
                                     }
@@ -182,8 +210,62 @@ pub fn PlanetTab() -> impl IntoView {
                         hint=move || t!(i18n, hint_eccentricity) />
                     <NumberInput label=move || t!(i18n, axial_tilt) value=axial_tilt unit="°" step="0.1"
                         hint=move || t!(i18n, hint_axial_tilt) />
-                    <NumberInput label=move || t!(i18n, star_mass) value=star_mass unit="M☉" step="0.01"
-                        hint=move || t!(i18n, hint_star_mass) />
+
+                    // Star mass: linked from Star tab or custom
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-xs font-medium text-label flex items-center gap-1">
+                                {t!(i18n, star_mass)}
+                                <super::ui::InfoHint text=move || t!(i18n, hint_star_mass) />
+                            </span>
+                            <button
+                                class=move || {
+                                    if custom_star.get() {
+                                        "text-[10px] font-medium px-2 py-0.5 rounded-full \
+                                         cursor-pointer \
+                                         bg-accent/15 text-accent ring-1 ring-accent/20"
+                                    } else {
+                                        "text-[10px] font-medium px-2 py-0.5 rounded-full \
+                                         cursor-pointer \
+                                         bg-edge/40 text-hint ring-1 ring-edge \
+                                         hover:text-label"
+                                    }
+                                }
+                                on:click=move |_| custom_star.update(|v| *v = !*v)
+                            >
+                                {move || if custom_star.get() { t_string!(i18n, custom) } else { t_string!(i18n, from_star) }}
+                            </button>
+                        </div>
+                        {move || if custom_star.get() {
+                            view! {
+                                <input
+                                    type="text" inputmode="decimal"
+                                    prop:value=move || custom_star_text.get()
+                                    class="bg-inset border border-edge rounded-lg
+                                           px-3 py-2 text-heading text-sm font-mono
+                                           outline-none
+                                           focus:border-accent focus:ring-1 focus:ring-accent/40
+                                           hover:border-divider w-full"
+                                    on:input=move |ev| {
+                                        let raw = event_target_value(&ev);
+                                        custom_star_text.set(raw.clone());
+                                        let sanitized = raw.replace(',', ".");
+                                        if let Ok(v) = sanitized.parse::<f64>() {
+                                            custom_star_mass.set(v);
+                                        }
+                                    }
+                                />
+                            }.into_any()
+                        } else {
+                            view! {
+                                <div class="bg-inset border border-edge rounded-lg
+                                            px-3 py-2 text-accent text-sm font-mono">
+                                    {move || format!("{:.3}", shared_star_mass.get())}
+                                    <span class="text-[10px] text-hint ml-1">"M☉"</span>
+                                </div>
+                            }.into_any()
+                        }}
+                    </div>
 
                     <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
                         {t!(i18n, atmosphere)}

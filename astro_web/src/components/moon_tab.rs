@@ -3,11 +3,12 @@ use astro_lib::moon::{
     is_moon_orbit_valid, moon_gravity, moon_mass, moon_orbital_period_days, near_resonance,
     roche_limit_planet_radii, stable_orbit_limit,
 };
+use astro_lib::planet::{density, planet_radius_auto};
 use crate::i18n::*;
 use leptos::prelude::*;
 
 use super::compare::{CompareTable, Snapshot};
-use super::storage::{ls_f64, ls_f64_dyn};
+use super::storage::{ls_bool, ls_f64, ls_f64_dyn};
 use super::ui::{InfoHint, NumberInput, ResultRow, SectionHeader};
 
 const R_EARTH_KM: f64 = 6_371.0;
@@ -19,16 +20,33 @@ struct MoonEntry {
     radius: RwSignal<f64>,
     density: RwSignal<f64>,
     distance: RwSignal<f64>,
+    radius_text: RwSignal<String>,
+    density_text: RwSignal<String>,
+    distance_text: RwSignal<String>,
+}
+
+fn sync_text(val: RwSignal<f64>, text: RwSignal<String>) {
+    Effect::new(move |_| {
+        let v = val.get();
+        let cur = text.get_untracked();
+        if cur.replace(',', ".").parse::<f64>().ok() != Some(v) {
+            text.set(v.to_string());
+        }
+    });
 }
 
 impl MoonEntry {
     fn new(id: u32) -> Self {
-        Self {
-            id,
-            radius: ls_f64_dyn(format!("moon_{id}_radius"), 0.273),
-            density: ls_f64_dyn(format!("moon_{id}_density"), 0.606),
-            distance: ls_f64_dyn(format!("moon_{id}_dist"), 60.27),
-        }
+        let radius = ls_f64_dyn(format!("moon_{id}_radius"), 0.273);
+        let density = ls_f64_dyn(format!("moon_{id}_density"), 0.606);
+        let distance = ls_f64_dyn(format!("moon_{id}_dist"), 60.27);
+        let radius_text = RwSignal::new(radius.get().to_string());
+        let density_text = RwSignal::new(density.get().to_string());
+        let distance_text = RwSignal::new(distance.get().to_string());
+        sync_text(radius, radius_text);
+        sync_text(density, density_text);
+        sync_text(distance, distance_text);
+        Self { id, radius, density, distance, radius_text, density_text, distance_text }
     }
 }
 
@@ -47,11 +65,62 @@ pub fn MoonTab() -> impl IntoView {
     let i18n = use_i18n();
 
     // ── shared planet / star inputs ─────────────────────────────────────────
-    let planet_mass    = ls_f64("moon_planet_mass",    1.0);
-    let planet_radius  = ls_f64("moon_planet_radius",  1.0);
-    let planet_density = ls_f64("moon_planet_density", 1.0);
-    let planet_orb_a   = ls_f64("moon_planet_orb_a",   1.0);
-    let star_mass      = ls_f64("moon_star_mass",       1.0);
+    // Custom toggle: when false, values flow from planet/star tabs
+    let custom_planet = ls_bool("moon_custom_planet", false);
+
+    // Shared signals (reading from planet/star tab localStorage keys)
+    let shared_planet_mass   = ls_f64("planet_mass", 1.0);
+    let shared_use_manual_r  = ls_bool("planet_use_manual_r", false);
+    let shared_manual_radius = ls_f64("planet_manual_radius", 1.0);
+    let shared_planet_orb_a  = ls_f64("planet_semi_major", 1.0);
+    // Star mass follows the chain: star → planet → moon
+    // Read from planet tab's effective star mass (which itself may link to star tab)
+    let shared_planet_custom_star = ls_bool("planet_custom_star", false);
+    let shared_planet_custom_star_mass = ls_f64("planet_custom_star_mass", 1.0);
+    let shared_star_mass_raw = ls_f64("star_mass", 1.0);
+
+    // Custom override signals (independent values for moon tab)
+    let custom_planet_mass    = ls_f64("moon_planet_mass",    1.0);
+    let custom_planet_radius  = ls_f64("moon_planet_radius",  1.0);
+    let custom_planet_density = ls_f64("moon_planet_density", 1.0);
+    let custom_planet_orb_a   = ls_f64("moon_planet_orb_a",   1.0);
+    let custom_star_mass      = ls_f64("moon_star_mass",       1.0);
+
+    // Auto-computed planet radius from planet tab's settings
+    let auto_planet_radius = move || {
+        let m = shared_planet_mass.get();
+        if shared_use_manual_r.get() {
+            shared_manual_radius.get()
+        } else {
+            planet_radius_auto(m)
+        }
+    };
+
+    // Auto star mass follows the planet tab's choice
+    let auto_star_mass = move || {
+        if shared_planet_custom_star.get() {
+            shared_planet_custom_star_mass.get()
+        } else {
+            shared_star_mass_raw.get()
+        }
+    };
+
+    // Effective signals
+    let planet_mass = Signal::derive(move || {
+        if custom_planet.get() { custom_planet_mass.get() } else { shared_planet_mass.get() }
+    });
+    let planet_radius = Signal::derive(move || {
+        if custom_planet.get() { custom_planet_radius.get() } else { auto_planet_radius() }
+    });
+    let planet_density = Signal::derive(move || {
+        if custom_planet.get() { custom_planet_density.get() } else { density(shared_planet_mass.get(), auto_planet_radius()) }
+    });
+    let planet_orb_a = Signal::derive(move || {
+        if custom_planet.get() { custom_planet_orb_a.get() } else { shared_planet_orb_a.get() }
+    });
+    let star_mass = Signal::derive(move || {
+        if custom_planet.get() { custom_star_mass.get() } else { auto_star_mass() }
+    });
 
     // ── dynamic moon list ───────────────────────────────────────────────────
     let next_id: RwSignal<u32> = RwSignal::new(1);
@@ -90,23 +159,78 @@ pub fn MoonTab() -> impl IntoView {
                         </h2>
                     </div>
 
-                    <p class="text-[10px] font-semibold text-hint uppercase tracking-widest">
-                        {t!(i18n, parent_planet)}
-                    </p>
-                    <NumberInput label=move || t!(i18n, mass)    value=planet_mass    unit="M⊕" step="0.01"
-                        hint=move || t!(i18n, hint_planet_mass_moon) />
-                    <NumberInput label=move || t!(i18n, radius)  value=planet_radius  unit="R⊕" step="0.01"
-                        hint=move || t!(i18n, hint_planet_radius_moon) />
-                    <NumberInput label=move || t!(i18n, density_label) value=planet_density unit="ρ⊕" step="0.01"
-                        hint=move || t!(i18n, hint_planet_density_moon) />
+                    <div class="flex items-baseline justify-between">
+                        <p class="text-[10px] font-semibold text-hint uppercase tracking-widest">
+                            {t!(i18n, parent_planet)}
+                        </p>
+                        <button
+                            class=move || {
+                                if custom_planet.get() {
+                                    "text-[10px] font-medium px-2 py-0.5 rounded-full \
+                                     cursor-pointer \
+                                     bg-accent/15 text-accent ring-1 ring-accent/20"
+                                } else {
+                                    "text-[10px] font-medium px-2 py-0.5 rounded-full \
+                                     cursor-pointer \
+                                     bg-edge/40 text-hint ring-1 ring-edge \
+                                     hover:text-label"
+                                }
+                            }
+                            on:click=move |_| custom_planet.update(|v| *v = !*v)
+                        >
+                            {move || if custom_planet.get() { t_string!(i18n, custom) } else { t_string!(i18n, from_planet) }}
+                        </button>
+                    </div>
 
-                    <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
-                        {t!(i18n, star_orbit)}
-                    </p>
-                    <NumberInput label=move || t!(i18n, planet_semi_major) value=planet_orb_a unit="AU" step="0.01"
-                        hint=move || t!(i18n, hint_planet_semi_major_moon) />
-                    <NumberInput label=move || t!(i18n, star_mass) value=star_mass unit="M☉" step="0.01"
-                        hint=move || t!(i18n, hint_star_mass_moon) />
+                    {move || if custom_planet.get() {
+                        view! {
+                            <NumberInput label=move || t!(i18n, mass) value=custom_planet_mass unit="M⊕" step="0.01"
+                                hint=move || t!(i18n, hint_planet_mass_moon) />
+                            <NumberInput label=move || t!(i18n, radius) value=custom_planet_radius unit="R⊕" step="0.01"
+                                hint=move || t!(i18n, hint_planet_radius_moon) />
+                            <NumberInput label=move || t!(i18n, density_label) value=custom_planet_density unit="ρ⊕" step="0.01"
+                                hint=move || t!(i18n, hint_planet_density_moon) />
+
+                            <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
+                                {t!(i18n, star_orbit)}
+                            </p>
+                            <NumberInput label=move || t!(i18n, planet_semi_major) value=custom_planet_orb_a unit="AU" step="0.01"
+                                hint=move || t!(i18n, hint_planet_semi_major_moon) />
+                            <NumberInput label=move || t!(i18n, star_mass) value=custom_star_mass unit="M☉" step="0.01"
+                                hint=move || t!(i18n, hint_star_mass_moon) />
+                        }.into_any()
+                    } else {
+                        view! {
+                            <div class="bg-inset border border-edge rounded-lg px-3 py-2 flex flex-col gap-1.5">
+                                <div class="flex justify-between text-sm font-mono">
+                                    <span class="text-hint text-[10px]">{t!(i18n, mass)}</span>
+                                    <span class="text-accent">{move || format!("{:.3}", planet_mass.get())}<span class="text-[10px] text-hint ml-1">"M⊕"</span></span>
+                                </div>
+                                <div class="flex justify-between text-sm font-mono">
+                                    <span class="text-hint text-[10px]">{t!(i18n, radius)}</span>
+                                    <span class="text-accent">{move || format!("{:.3}", planet_radius.get())}<span class="text-[10px] text-hint ml-1">"R⊕"</span></span>
+                                </div>
+                                <div class="flex justify-between text-sm font-mono">
+                                    <span class="text-hint text-[10px]">{t!(i18n, density_label)}</span>
+                                    <span class="text-accent">{move || format!("{:.3}", planet_density.get())}<span class="text-[10px] text-hint ml-1">"ρ⊕"</span></span>
+                                </div>
+                            </div>
+
+                            <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
+                                {t!(i18n, star_orbit)}
+                            </p>
+                            <div class="bg-inset border border-edge rounded-lg px-3 py-2 flex flex-col gap-1.5">
+                                <div class="flex justify-between text-sm font-mono">
+                                    <span class="text-hint text-[10px]">{t!(i18n, planet_semi_major)}</span>
+                                    <span class="text-accent">{move || format!("{:.3}", planet_orb_a.get())}<span class="text-[10px] text-hint ml-1">"AU"</span></span>
+                                </div>
+                                <div class="flex justify-between text-sm font-mono">
+                                    <span class="text-hint text-[10px]">{t!(i18n, star_mass)}</span>
+                                    <span class="text-accent">{move || format!("{:.3}", star_mass.get())}<span class="text-[10px] text-hint ml-1">"M☉"</span></span>
+                                </div>
+                            </div>
+                        }.into_any()
+                    }}
 
                     // ── Moon entries ────────────────────────────────────────
                     <div class="flex items-center justify-between pt-2">
@@ -129,6 +253,9 @@ pub fn MoonTab() -> impl IntoView {
                             let mr = entry.radius;
                             let md = entry.density;
                             let mdist = entry.distance;
+                            let mr_t = entry.radius_text;
+                            let md_t = entry.density_text;
+                            let mdist_t = entry.distance_text;
                             view! {
                                 <div class="bg-inset border border-edge rounded-xl p-4 flex flex-col gap-3">
                                     <div class="flex items-center justify-between">
@@ -149,13 +276,15 @@ pub fn MoonTab() -> impl IntoView {
                                             {t!(i18n, radius_earth)}
                                             <InfoHint text=move || t!(i18n, hint_moon_radius) />
                                         </span>
-                                        <input type="number" step="0.001"
-                                            prop:value=move || mr.get().to_string()
+                                        <input type="text" inputmode="decimal"
+                                            prop:value=move || mr_t.get()
                                             class="bg-base border border-edge rounded-lg px-3 py-1.5
                                                    text-heading text-sm font-mono outline-none
                                                    focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
                                             on:input=move |ev| {
-                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { mr.set(v); }
+                                                let raw = event_target_value(&ev);
+                                                mr_t.set(raw.clone());
+                                                if let Ok(v) = raw.replace(',', ".").parse::<f64>() { mr.set(v); }
                                             }
                                         />
                                     </div>
@@ -164,13 +293,15 @@ pub fn MoonTab() -> impl IntoView {
                                             {t!(i18n, density)}
                                             <InfoHint text=move || t!(i18n, hint_moon_density) />
                                         </span>
-                                        <input type="number" step="0.01"
-                                            prop:value=move || md.get().to_string()
+                                        <input type="text" inputmode="decimal"
+                                            prop:value=move || md_t.get()
                                             class="bg-base border border-edge rounded-lg px-3 py-1.5
                                                    text-heading text-sm font-mono outline-none
                                                    focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
                                             on:input=move |ev| {
-                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { md.set(v); }
+                                                let raw = event_target_value(&ev);
+                                                md_t.set(raw.clone());
+                                                if let Ok(v) = raw.replace(',', ".").parse::<f64>() { md.set(v); }
                                             }
                                         />
                                     </div>
@@ -179,13 +310,15 @@ pub fn MoonTab() -> impl IntoView {
                                             {t!(i18n, distance_rp)}
                                             <InfoHint text=move || t!(i18n, hint_moon_distance) />
                                         </span>
-                                        <input type="number" step="0.1"
-                                            prop:value=move || mdist.get().to_string()
+                                        <input type="text" inputmode="decimal"
+                                            prop:value=move || mdist_t.get()
                                             class="bg-base border border-edge rounded-lg px-3 py-1.5
                                                    text-heading text-sm font-mono outline-none
                                                    focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
                                             on:input=move |ev| {
-                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { mdist.set(v); }
+                                                let raw = event_target_value(&ev);
+                                                mdist_t.set(raw.clone());
+                                                if let Ok(v) = raw.replace(',', ".").parse::<f64>() { mdist.set(v); }
                                             }
                                         />
                                     </div>
