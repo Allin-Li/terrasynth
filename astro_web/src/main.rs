@@ -31,8 +31,8 @@ fn AppInner(active_tab: RwSignal<Tab>) -> impl IntoView {
     };
 
     view! {
-        <div class="min-h-dvh bg-base text-heading">
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        <div class="min-h-dvh bg-base text-heading overflow-x-auto">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 min-w-[320px]">
 
                 <header class="flex items-start justify-between gap-4">
                     <div class="flex flex-col gap-1">
