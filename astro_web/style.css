@@ -40,6 +40,20 @@
     format("woff2");
 }
 
+/* Astronomical symbols (⊕ ☉) fall back to a system symbol font that renders
+   them visually larger than Inter's text. size-adjust scales them down to match. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local("Apple Symbols"), local("Segoe UI Symbol"), local("DejaVu Sans"),
+       url("https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2")
+         format("woff2");
+  unicode-range: U+2295, U+2609;
+  size-adjust: 75%;
+}
+
 /* ── Base ───────────────────────────────────────────────────────────────────── */
 html {
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
