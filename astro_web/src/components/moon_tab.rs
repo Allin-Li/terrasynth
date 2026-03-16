@@ -352,29 +352,40 @@ pub fn MoonTab() -> impl IntoView {
                                 let h_au_val = hill_sphere_au(oa, pm, sm);
                                 let h_rp_val = hill_sphere_planet_radii(oa, pm, sm, pr);
 
-                                let mut rows: Vec<(String, String)> = vec![
-                                    (t_string!(i18n, hill_sphere).to_owned(),        format!("{:.4} AU  ({:.0} Rp)", h_au_val, h_rp_val)),
-                                    (t_string!(i18n, stable_orbit_limit).to_owned(), format!("{:.4} AU  ({:.0} Rp)",
+                                let ek = Locale::en.get_keys_const();
+                                let rk = Locale::ru.get_keys_const();
+                                macro_rules! lbl {
+                                    ($key:ident) => { [ek.$key().inner().to_owned(), rk.$key().inner().to_owned()] }
+                                }
+
+                                let mut rows: Vec<([String; 2], String)> = vec![
+                                    (lbl!(hill_sphere),        format!("{:.4} AU  ({:.0} Rp)", h_au_val, h_rp_val)),
+                                    (lbl!(stable_orbit_limit), format!("{:.4} AU  ({:.0} Rp)",
                                         stable_orbit_limit(h_au_val), stable_orbit_limit(h_rp_val))),
                                 ];
 
                                 let moon_list = moons.get();
+                                let en_moon = ek.moon().inner();
+                                let ru_moon = rk.moon().inner();
                                 for (i, m) in moon_list.iter().enumerate() {
                                     let mr = m.radius.get();
                                     let md = m.density.get();
                                     let dst = m.distance.get();
                                     let mass_val = moon_mass(mr, md);
                                     let ang = angular_size_arcmin(mr * R_EARTH_KM, dst * R_EARTH_KM);
-                                    let label_prefix = if moon_list.len() > 1 {
-                                        format!("{} {} ", t_string!(i18n, moon), i + 1)
+                                    let (en_pre, ru_pre) = if moon_list.len() > 1 {
+                                        (format!("{} {} ", en_moon, i + 1), format!("{} {} ", ru_moon, i + 1))
                                     } else {
-                                        String::new()
+                                        (String::new(), String::new())
                                     };
-                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, mass_earth)),         format!("{:.4}", mass_val)));
-                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, surface_gravity)),    format!("{:.3}", moon_gravity(mass_val, mr))));
-                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, angular_size)),       format_ang(ang)));
-                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, orbital_period_days)), format!("{:.1}", moon_orbital_period_days(dst, pm))));
-                                    rows.push((format!("{}{}", label_prefix, t_string!(i18n, roche_limit)),        format!("{:.2}", roche_limit_planet_radii(pd, md))));
+                                    let lbl_p = |ek_s: &str, rk_s: &str| -> [String; 2] {
+                                        [format!("{}{}", en_pre, ek_s), format!("{}{}", ru_pre, rk_s)]
+                                    };
+                                    rows.push((lbl_p(ek.mass_earth().inner(), rk.mass_earth().inner()),          format!("{:.4}", mass_val)));
+                                    rows.push((lbl_p(ek.surface_gravity().inner(), rk.surface_gravity().inner()), format!("{:.3}", moon_gravity(mass_val, mr))));
+                                    rows.push((lbl_p(ek.angular_size().inner(), rk.angular_size().inner()),       format_ang(ang)));
+                                    rows.push((lbl_p(ek.orbital_period_days().inner(), rk.orbital_period_days().inner()), format!("{:.1}", moon_orbital_period_days(dst, pm))));
+                                    rows.push((lbl_p(ek.roche_limit().inner(), rk.roche_limit().inner()),         format!("{:.2}", roche_limit_planet_radii(pd, md))));
                                 }
 
                                 let snap = Snapshot { name: world_name.get(), rows };

@@ -54,11 +54,13 @@ name = "astro-web"
 version = "0.1.0"
 dependencies = [
  "astro_lib",
+ "js-sys",
  "leptos",
  "leptos_i18n",
  "leptos_i18n_build",
  "leptos_meta",
  "serde",
+ "wasm-bindgen",
  "web-sys",
 ]
 

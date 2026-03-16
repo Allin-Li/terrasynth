@@ -200,37 +200,44 @@ pub fn StarTab() -> impl IntoView {
                                    hover:bg-accent/30 whitespace-nowrap"
                             on:click=move |_| {
                                 let m = mass.get();
+                                let ek = Locale::en.get_keys_const();
+                                let rk = Locale::ru.get_keys_const();
+                                let ck = i18n.get_locale_untracked().get_keys_const();
+                                // Helper: bilingual label [en, ru]
+                                macro_rules! lbl {
+                                    ($key:ident) => { [ek.$key().inner().to_owned(), rk.$key().inner().to_owned()] }
+                                }
                                 let mut rows = vec![
-                                    (t_string!(i18n, luminosity).to_owned(),        fmt_result(luminosity(m), 3)),
-                                    (t_string!(i18n, temperature_class).to_owned(), match temperature(m) {
+                                    (lbl!(luminosity),        fmt_result(luminosity(m), 3)),
+                                    (lbl!(temperature_class), match temperature(m) {
                                         Ok(t) => format!("{t:.3}  ({})", spectral_class(t)),
                                         Err(e) => e.to_string(),
                                     }),
-                                    (t_string!(i18n, radius_solar).to_owned(), fmt_result(
+                                    (lbl!(radius_solar), fmt_result(
                                         luminosity(m).and_then(|l|
                                             temperature(m).map(|t| radius(l, t))),
                                         3
                                     )),
-                                    (t_string!(i18n, lifetime).to_owned(),        fmt_result(lifetime(m), 2)),
-                                    (t_string!(i18n, peak_wavelength).to_owned(), fmt_result(temperature(m).map(peak_wavelength), 1)),
-                                    (t_string!(i18n, hz_inner_outer).to_owned(), match luminosity(m) {
+                                    (lbl!(lifetime),        fmt_result(lifetime(m), 2)),
+                                    (lbl!(peak_wavelength), fmt_result(temperature(m).map(peak_wavelength), 1)),
+                                    (lbl!(hz_inner_outer), match luminosity(m) {
                                         Ok(l) => {
                                             let hz = habitable_zone(l);
                                             format!("{:.2} – {:.2}", hz.inner, hz.outer)
                                         }
                                         Err(e) => e.to_string(),
                                     }),
-                                    (t_string!(i18n, frost_line).to_owned(), fmt_result(luminosity(m).map(frost_line), 2)),
-                                    (t_string!(i18n, predicted_pigment).to_owned(), match temperature(m) {
+                                    (lbl!(frost_line), fmt_result(luminosity(m).map(frost_line), 2)),
+                                    (lbl!(predicted_pigment), match temperature(m) {
                                         Ok(t) => {
                                             let pred = predict_flora_pigment(spectral_class(t), peak_wavelength(t));
                                             match pred.pigment {
-                                                astro_lib::flora::FloraPigment::Green     => t_string!(i18n, pigment_green).to_owned(),
-                                                astro_lib::flora::FloraPigment::Red       => t_string!(i18n, pigment_red).to_owned(),
-                                                astro_lib::flora::FloraPigment::Orange    => t_string!(i18n, pigment_orange).to_owned(),
-                                                astro_lib::flora::FloraPigment::Blue      => t_string!(i18n, pigment_blue).to_owned(),
-                                                astro_lib::flora::FloraPigment::Black     => t_string!(i18n, pigment_black).to_owned(),
-                                                astro_lib::flora::FloraPigment::UvHostile => t_string!(i18n, pigment_uv_hostile).to_owned(),
+                                                astro_lib::flora::FloraPigment::Green     => ck.pigment_green().inner().to_owned(),
+                                                astro_lib::flora::FloraPigment::Red       => ck.pigment_red().inner().to_owned(),
+                                                astro_lib::flora::FloraPigment::Orange    => ck.pigment_orange().inner().to_owned(),
+                                                astro_lib::flora::FloraPigment::Blue      => ck.pigment_blue().inner().to_owned(),
+                                                astro_lib::flora::FloraPigment::Black     => ck.pigment_black().inner().to_owned(),
+                                                astro_lib::flora::FloraPigment::UvHostile => ck.pigment_uv_hostile().inner().to_owned(),
                                             }
                                         }
                                         Err(e) => e.to_string(),
@@ -239,11 +246,11 @@ pub fn StarTab() -> impl IntoView {
 
                                 if binary_mode.get() {
                                     let mb = mass_b.get();
-                                    rows.push((t_string!(i18n, star_b_lum).to_owned(), fmt_result(luminosity(mb), 3)));
-                                    rows.push((t_string!(i18n, binary_period).to_owned(), format!("{:.1}", binary_orbital_period(bin_sep.get(), m, mb))));
-                                    rows.push((t_string!(i18n, combined_luminosity).to_owned(), fmt_result(combined_luminosity(m, mb), 3)));
-                                    rows.push((t_string!(i18n, s_type_max_orbit).to_owned(), format!("{:.2}", s_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
-                                    rows.push((t_string!(i18n, p_type_min_orbit).to_owned(), format!("{:.2}", p_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
+                                    rows.push((lbl!(star_b_lum),          fmt_result(luminosity(mb), 3)));
+                                    rows.push((lbl!(binary_period),        format!("{:.1}", binary_orbital_period(bin_sep.get(), m, mb))));
+                                    rows.push((lbl!(combined_luminosity),  fmt_result(combined_luminosity(m, mb), 3)));
+                                    rows.push((lbl!(s_type_max_orbit),     format!("{:.2}", s_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
+                                    rows.push((lbl!(p_type_min_orbit),     format!("{:.2}", p_type_critical_radius(bin_sep.get(), bin_ecc.get(), m, mb))));
                                 }
 
                                 let snap = Snapshot { name: world_name.get(), rows };

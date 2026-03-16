@@ -6,16 +6,19 @@ use leptos::prelude::*;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Snapshot {
     pub name: String,
-    pub rows: Vec<(String, String)>,
+    /// Each row: ([label_en, label_ru], value).
+    /// Labels are pre-computed in both locales so the table can switch reactively.
+    pub rows: Vec<([String; 2], String)>,
 }
 
 // ── Markdown export ───────────────────────────────────────────────────────────
 
-pub fn to_markdown(snaps: &[Snapshot]) -> String {
+pub fn to_markdown(snaps: &[Snapshot], locale: Locale) -> String {
     if snaps.is_empty() {
         return String::new();
     }
     let mut out = String::new();
+    let li = if locale == Locale::en { 0 } else { 1 };
 
     // Header row
     out.push_str("| Property |");
@@ -33,8 +36,8 @@ pub fn to_markdown(snaps: &[Snapshot]) -> String {
 
     // Data rows (use first snapshot's labels as row headers)
     if let Some(first) = snaps.first() {
-        for (i, (label, _)) in first.rows.iter().enumerate() {
-            out.push_str(&format!("| {} |", label));
+        for (i, (labels, _)) in first.rows.iter().enumerate() {
+            out.push_str(&format!("| {} |", labels[li]));
             for snap in snaps {
                 let val = snap.rows.get(i).map(|(_, v)| v.as_str()).unwrap_or("-");
                 out.push_str(&format!(" {} |", val));
@@ -56,7 +59,7 @@ pub fn CompareTable(snapshots: RwSignal<Vec<Snapshot>>) -> impl IntoView {
 
     let md_text = Signal::derive(move || {
         let snaps = snapshots.get();
-        to_markdown(&snaps)
+        to_markdown(&snaps, i18n.get_locale())
     });
 
     view! {
@@ -143,12 +146,14 @@ pub fn CompareTable(snapshots: RwSignal<Vec<Snapshot>>) -> impl IntoView {
                                     <tbody>
                                         {move || {
                                             let snaps = snapshots.get();
+                                            let locale = i18n.get_locale();
+                                            let li = if locale == Locale::en { 0 } else { 1 };
                                             let n_rows = snaps
                                                 .first()
                                                 .map(|s| s.rows.len())
                                                 .unwrap_or(0);
                                             (0..n_rows).map(|row_i| {
-                                                let label = snaps[0].rows[row_i].0.clone();
+                                                let label = snaps[0].rows[row_i].0[li].clone();
                                                 let vals: Vec<String> = snaps
                                                     .iter()
                                                     .map(|s| {
