@@ -456,18 +456,18 @@ pub fn MoonTab() -> impl IntoView {
                                     hint=move || t!(i18n, hint_roche_limit)>
                                     {move || format!("{:.2}", m_roche())}
                                 </ResultRow>
-                                <div class="flex justify-between items-baseline gap-4 py-2.5 px-3
+                                <div class="flex justify-between items-start gap-4 py-2.5 px-3
                                             border-b border-divider/30 rounded hover:bg-edge/20">
-                                    <span class="text-label text-sm flex items-center gap-1">
+                                    <span class="text-label text-sm flex items-center gap-1 flex-1 min-w-0 flex-wrap">
                                         {t!(i18n, orbit_valid)}
                                         <InfoHint text=move || t!(i18n, hint_orbit_valid) />
                                     </span>
                                     <span class=move || {
                                         if orbit_ok() {
-                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full \
+                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
                                              bg-ok/15 text-ok ring-1 ring-ok/25"
                                         } else {
-                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full \
+                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
                                              bg-err/15 text-err ring-1 ring-err/25"
                                         }
                                     }>

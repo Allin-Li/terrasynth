@@ -26,14 +26,14 @@ pub fn ResultRow(
     children: Children,
 ) -> impl IntoView {
     view! {
-        <div class="flex justify-between items-baseline gap-4 py-2.5 px-3
+        <div class="flex justify-between items-start gap-4 py-2.5 px-3
                     border-b border-divider/30 last:border-0
                     rounded hover:bg-edge/20">
-            <span class="text-label text-sm flex items-center gap-1">
+            <span class="text-label text-sm flex items-center gap-1 flex-1 min-w-0 flex-wrap">
                 {label.run()}
                 {hint.map(|h| view! { <InfoHint text=h /> })}
             </span>
-            <span class="text-heading text-sm font-mono tabular-nums text-right">
+            <span class="text-heading text-sm font-mono tabular-nums text-right shrink-0">
                 {children()}
             </span>
         </div>
@@ -49,19 +49,19 @@ pub fn BoolRow(
 ) -> impl IntoView {
     let i18n = crate::i18n::use_i18n();
     view! {
-        <div class="flex justify-between items-baseline gap-4 py-2.5 px-3
+        <div class="flex justify-between items-start gap-4 py-2.5 px-3
                     border-b border-divider/30 last:border-0
                     rounded hover:bg-edge/20">
-            <span class="text-label text-sm flex items-center gap-1">
+            <span class="text-label text-sm flex items-center gap-1 flex-1 min-w-0 flex-wrap">
                 {label.run()}
                 {hint.map(|h| view! { <InfoHint text=h /> })}
             </span>
             <span class=move || {
                 if value.get() {
-                    "text-xs font-semibold px-2.5 py-0.5 rounded-full \
+                    "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
                      bg-ok/15 text-ok ring-1 ring-ok/25"
                 } else {
-                    "text-xs font-semibold px-2.5 py-0.5 rounded-full \
+                    "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
                      bg-err/15 text-err ring-1 ring-err/25"
                 }
             }>
