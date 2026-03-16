@@ -1,5 +1,14 @@
 use leptos::prelude::*;
 
+/// Keep only digits, dots, commas, and leading minus — strip everything else.
+pub fn filter_numeric(s: &str) -> String {
+    s.chars()
+        .enumerate()
+        .filter(|(i, c)| c.is_ascii_digit() || *c == '.' || *c == ',' || (*c == '-' && *i == 0))
+        .map(|(_, c)| c)
+        .collect()
+}
+
 /// Format a `Result<f64, E>` as a string with `precision` decimal places,
 /// or the error message if `Err`.
 pub fn fmt_result<E: std::fmt::Display>(r: Result<f64, E>, precision: usize) -> String {
@@ -232,9 +241,9 @@ pub fn NumberInput(
                        hover:border-divider
                        placeholder:text-hint w-full"
                 on:input=move |ev| {
-                    let raw = event_target_value(&ev);
-                    text.set(raw.clone());
-                    let sanitized = raw.replace(',', ".");
+                    let filtered = filter_numeric(&event_target_value(&ev));
+                    text.set(filtered.clone());
+                    let sanitized = filtered.replace(',', ".");
                     if let Ok(v) = sanitized.parse::<f64>() {
                         value.set(v);
                     }

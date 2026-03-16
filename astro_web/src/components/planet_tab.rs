@@ -14,7 +14,7 @@ use leptos::prelude::*;
 
 use super::compare::{CompareTable, Snapshot};
 use super::storage::{ls_bool, ls_f64};
-use super::ui::{BoolRow, NumberInput, ResultRow, SectionHeader};
+use super::ui::{filter_numeric, BoolRow, NumberInput, ResultRow, SectionHeader};
 
 #[component]
 pub fn PlanetTab() -> impl IntoView {
@@ -182,9 +182,9 @@ pub fn PlanetTab() -> impl IntoView {
                                            focus:border-accent focus:ring-1 focus:ring-accent/40
                                            hover:border-divider w-full"
                                     on:input=move |ev| {
-                                        let raw = event_target_value(&ev);
-                                        manual_radius_text.set(raw.clone());
-                                        let sanitized = raw.replace(',', ".");
+                                        let filtered = filter_numeric(&event_target_value(&ev));
+                                        manual_radius_text.set(filtered.clone());
+                                        let sanitized = filtered.replace(',', ".");
                                         if let Ok(v) = sanitized.parse::<f64>() {
                                             manual_radius.set(v);
                                         }
@@ -247,9 +247,9 @@ pub fn PlanetTab() -> impl IntoView {
                                            focus:border-accent focus:ring-1 focus:ring-accent/40
                                            hover:border-divider w-full"
                                     on:input=move |ev| {
-                                        let raw = event_target_value(&ev);
-                                        custom_star_text.set(raw.clone());
-                                        let sanitized = raw.replace(',', ".");
+                                        let filtered = filter_numeric(&event_target_value(&ev));
+                                        custom_star_text.set(filtered.clone());
+                                        let sanitized = filtered.replace(',', ".");
                                         if let Ok(v) = sanitized.parse::<f64>() {
                                             custom_star_mass.set(v);
                                         }

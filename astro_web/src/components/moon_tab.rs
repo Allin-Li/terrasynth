@@ -9,7 +9,7 @@ use leptos::prelude::*;
 
 use super::compare::{CompareTable, Snapshot};
 use super::storage::{ls_bool, ls_f64, ls_f64_dyn};
-use super::ui::{InfoHint, NumberInput, ResultRow, SectionHeader};
+use super::ui::{filter_numeric, InfoHint, NumberInput, ResultRow, SectionHeader};
 
 const R_EARTH_KM: f64 = 6_371.0;
 
@@ -282,9 +282,9 @@ pub fn MoonTab() -> impl IntoView {
                                                    text-heading text-sm font-mono outline-none
                                                    focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
                                             on:input=move |ev| {
-                                                let raw = event_target_value(&ev);
-                                                mr_t.set(raw.clone());
-                                                if let Ok(v) = raw.replace(',', ".").parse::<f64>() { mr.set(v); }
+                                                let filtered = filter_numeric(&event_target_value(&ev));
+                                                mr_t.set(filtered.clone());
+                                                if let Ok(v) = filtered.replace(',', ".").parse::<f64>() { mr.set(v); }
                                             }
                                         />
                                     </div>
@@ -299,9 +299,9 @@ pub fn MoonTab() -> impl IntoView {
                                                    text-heading text-sm font-mono outline-none
                                                    focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
                                             on:input=move |ev| {
-                                                let raw = event_target_value(&ev);
-                                                md_t.set(raw.clone());
-                                                if let Ok(v) = raw.replace(',', ".").parse::<f64>() { md.set(v); }
+                                                let filtered = filter_numeric(&event_target_value(&ev));
+                                                md_t.set(filtered.clone());
+                                                if let Ok(v) = filtered.replace(',', ".").parse::<f64>() { md.set(v); }
                                             }
                                         />
                                     </div>
@@ -316,9 +316,9 @@ pub fn MoonTab() -> impl IntoView {
                                                    text-heading text-sm font-mono outline-none
                                                    focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
                                             on:input=move |ev| {
-                                                let raw = event_target_value(&ev);
-                                                mdist_t.set(raw.clone());
-                                                if let Ok(v) = raw.replace(',', ".").parse::<f64>() { mdist.set(v); }
+                                                let filtered = filter_numeric(&event_target_value(&ev));
+                                                mdist_t.set(filtered.clone());
+                                                if let Ok(v) = filtered.replace(',', ".").parse::<f64>() { mdist.set(v); }
                                             }
                                         />
                                     </div>
