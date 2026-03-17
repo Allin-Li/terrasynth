@@ -35,7 +35,7 @@ pub fn ResultRow(
                 {label.run()}
                 {hint.map(|h| view! { <InfoHint text=h /> })}
             </span>
-            <span class="text-heading text-sm font-mono tabular-nums text-right shrink-0">
+            <span class="text-heading text-sm font-mono tabular-nums text-right min-w-0 break-words">
                 {children()}
             </span>
         </div>
