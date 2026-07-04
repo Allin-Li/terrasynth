@@ -32,6 +32,7 @@ pub fn PlanetTab() -> impl IntoView {
     let semi_major    = ls_f64("planet_semi_major", 1.0);
     let eccentricity  = ls_f64("planet_eccentricity", 0.017);
     let axial_tilt    = ls_f64("planet_axial_tilt", 23.4);
+    let peri_long     = ls_f64("planet_peri_long", 283.0);
     let system_age    = ls_f64("system_age_gyr", 4.6);
 
     // star mass: linked from star tab by default, or custom override
@@ -127,26 +128,43 @@ pub fn PlanetTab() -> impl IntoView {
     let sh = move || scale_height(grav());
 
     // ── climate by latitude ─────────────────────────────────────────────────
-    let climate_rows = move || climate_bands(axial_tilt.get(), t_surf());
+    // Bands from −90° (south) to +90° (north); with an eccentric orbit the
+    // hemispheres differ, so the table collapses to 0–90° only when the
+    // perihelion asymmetry is negligible.
+    let climate_rows = move || {
+        let rows = climate_bands(axial_tilt.get(), t_surf(), eccentricity.get(), peri_long.get());
+        // Earth's tiny eccentricity gives a ~2 K hemisphere skew — below
+        // this threshold showing both hemispheres is noise, not signal.
+        let symmetric = (0..6).all(|i| {
+            let (s, n) = (&rows[i], &rows[12 - i]);
+            (s.summer_k - n.summer_k).abs() < 2.5 && (s.winter_k - n.winter_k).abs() < 2.5
+        });
+        let shown = if symmetric {
+            rows[6..].to_vec()
+        } else {
+            rows.into_iter().rev().collect()
+        };
+        (shown, symmetric)
+    };
 
     // Planet disc colored by climate zone bands (computed at band midpoints).
     // Built as an SVG string: only numbers and palette hex colors go in.
     let climate_svg = move || {
         let tilt = axial_tilt.get();
         let tm = t_surf();
+        let (ecc, peri) = (eccentricity.get(), peri_long.get());
         let mut rects = String::new();
-        for i in 0..6u32 {
-            let mid = i as f64 * 15.0 + 7.5;
-            let c = latitude_climate(mid, tilt, tm, HEAT_TRANSPORT_EARTH, SEASONAL_DAMPING_EARTH);
+        for i in 0..12u32 {
+            let top = 90.0 - i as f64 * 15.0;
+            let c = latitude_climate(
+                top - 7.5, tilt, tm, ecc, peri, HEAT_TRANSPORT_EARTH, SEASONAL_DAMPING_EARTH,
+            );
             let color = zone_display_color(c.zone);
-            let s1 = (i as f64 * 15.0).to_radians().sin() * 56.0;
-            let s2 = ((i + 1) as f64 * 15.0).to_radians().sin() * 56.0;
-            let h = s2 - s1;
-            let yn = 60.0 - s2;
-            let ys = 60.0 + s1;
+            let y1 = 60.0 - top.to_radians().sin() * 56.0;
+            let y2 = 60.0 - (top - 15.0).to_radians().sin() * 56.0;
+            let h = y2 - y1;
             rects.push_str(&format!(
-                "<rect x='4' y='{yn:.2}' width='112' height='{h:.2}' fill='{color}'/>\
-                 <rect x='4' y='{ys:.2}' width='112' height='{h:.2}' fill='{color}'/>"
+                "<rect x='4' y='{y1:.2}' width='112' height='{h:.2}' fill='{color}'/>"
             ));
         }
         format!(
@@ -263,6 +281,8 @@ pub fn PlanetTab() -> impl IntoView {
                         hint=move || t!(i18n, hint_eccentricity) />
                     <NumberInput label=move || t!(i18n, axial_tilt) value=axial_tilt unit="°" step="0.1"
                         hint=move || t!(i18n, hint_axial_tilt) />
+                    <NumberInput label=move || t!(i18n, perihelion_long) value=peri_long unit="°" step="1"
+                        hint=move || t!(i18n, hint_perihelion_long) />
                     <NumberInput label=move || t!(i18n, system_age) value=system_age unit="Gyr" step="0.1"
                         hint=move || t!(i18n, hint_system_age) />
 
@@ -602,8 +622,20 @@ pub fn PlanetTab() -> impl IntoView {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {move || climate_rows().into_iter().map(|c| {
+                                                    {move || { let (rows, symmetric) = climate_rows(); rows.into_iter().map(move |c| {
                                                         let color = zone_display_color(c.zone);
+                                                        let lat_label = if symmetric || c.latitude_deg == 0.0 {
+                                                            format!("{:.0}°", c.latitude_deg.abs())
+                                                        } else if c.latitude_deg > 0.0 {
+                                                            format!("{:.0}° {}", c.latitude_deg, t_string!(i18n, lat_north))
+                                                        } else {
+                                                            format!("{:.0}° {}", -c.latitude_deg, t_string!(i18n, lat_south))
+                                                        };
+                                                        // round first so −0.4 °C prints as 0, not "-0"
+                                                        let fmt_c = |k: f64| {
+                                                            let deg = (k - 273.15).round() + 0.0;
+                                                            format!("{deg:.0}")
+                                                        };
                                                         let zone_name = match c.zone {
                                                             ClimateZone::IceCap    => t_string!(i18n, zone_ice_cap),
                                                             ClimateZone::Tundra    => t_string!(i18n, zone_tundra),
@@ -614,8 +646,8 @@ pub fn PlanetTab() -> impl IntoView {
                                                         };
                                                         view! {
                                                             <tr class="border-t border-divider/30 hover:bg-edge/20">
-                                                                <td class="text-label font-mono py-1.5 pr-2">
-                                                                    {format!("{:.0}°", c.latitude_deg)}
+                                                                <td class="text-label font-mono py-1.5 pr-2 whitespace-nowrap">
+                                                                    {lat_label}
                                                                 </td>
                                                                 <td class="py-1.5 px-2">
                                                                     <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
@@ -627,17 +659,17 @@ pub fn PlanetTab() -> impl IntoView {
                                                                     </span>
                                                                 </td>
                                                                 <td class="text-heading font-mono tabular-nums text-right py-1.5 px-2">
-                                                                    {format!("{:.0}", c.annual_k - 273.15)}
+                                                                    {fmt_c(c.annual_k)}
                                                                 </td>
                                                                 <td class="text-heading font-mono tabular-nums text-right py-1.5 px-2">
-                                                                    {format!("{:.0}", c.summer_k - 273.15)}
+                                                                    {fmt_c(c.summer_k)}
                                                                 </td>
                                                                 <td class="text-heading font-mono tabular-nums text-right py-1.5 pl-2">
-                                                                    {format!("{:.0}", c.winter_k - 273.15)}
+                                                                    {fmt_c(c.winter_k)}
                                                                 </td>
                                                             </tr>
                                                         }
-                                                    }).collect::<Vec<_>>()}
+                                                    }).collect::<Vec<_>>() }}
                                                 </tbody>
                                             </table>
                                             <p class="text-[10px] text-hint pt-1">"°C"</p>

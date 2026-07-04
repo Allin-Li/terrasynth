@@ -15,6 +15,7 @@ const F64_KEYS: &[&str] = &[
     "planet_semi_major",
     "planet_eccentricity",
     "planet_axial_tilt",
+    "planet_peri_long",
     "system_age_gyr",
     "planet_custom_star_mass",
     "planet_albedo",
