@@ -1,5 +1,6 @@
 pub mod atmosphere;
 pub mod binary;
+pub mod climate;
 pub mod error;
 pub mod flora;
 pub mod habitability;

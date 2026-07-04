@@ -2,6 +2,10 @@ use astro_lib::atmosphere::{
     atmosphere_retention, equilibrium_temperature, exosphere_temperature_estimate,
     greenhouse_effect, scale_height, surface_pressure_estimate, surface_temperature,
 };
+use astro_lib::climate::{
+    climate_bands, latitude_climate, zone_display_color, ClimateZone, HEAT_TRANSPORT_EARTH,
+    SEASONAL_DAMPING_EARTH,
+};
 use astro_lib::habitability::{is_habitable_tilt, is_in_habitable_zone};
 use astro_lib::orbit::{aphelion, orbital_period, orbital_velocity, perihelion, polar_circle, tropic_latitude};
 use astro_lib::planet::{
@@ -121,6 +125,39 @@ pub fn PlanetTab() -> impl IntoView {
     let gh_delta = move || greenhouse_effect(s_press(), co2_fraction.get());
     let t_surf = move || surface_temperature(t_eq(), gh_delta());
     let sh = move || scale_height(grav());
+
+    // ── climate by latitude ─────────────────────────────────────────────────
+    let climate_rows = move || climate_bands(axial_tilt.get(), t_surf());
+
+    // Planet disc colored by climate zone bands (computed at band midpoints).
+    // Built as an SVG string: only numbers and palette hex colors go in.
+    let climate_svg = move || {
+        let tilt = axial_tilt.get();
+        let tm = t_surf();
+        let mut rects = String::new();
+        for i in 0..6u32 {
+            let mid = i as f64 * 15.0 + 7.5;
+            let c = latitude_climate(mid, tilt, tm, HEAT_TRANSPORT_EARTH, SEASONAL_DAMPING_EARTH);
+            let color = zone_display_color(c.zone);
+            let s1 = (i as f64 * 15.0).to_radians().sin() * 56.0;
+            let s2 = ((i + 1) as f64 * 15.0).to_radians().sin() * 56.0;
+            let h = s2 - s1;
+            let yn = 60.0 - s2;
+            let ys = 60.0 + s1;
+            rects.push_str(&format!(
+                "<rect x='4' y='{yn:.2}' width='112' height='{h:.2}' fill='{color}'/>\
+                 <rect x='4' y='{ys:.2}' width='112' height='{h:.2}' fill='{color}'/>"
+            ));
+        }
+        format!(
+            "<svg viewBox='0 0 120 120' width='120' height='120' role='img'>\
+             <defs><clipPath id='climate-disc'><circle cx='60' cy='60' r='56'/></clipPath></defs>\
+             <g clip-path='url(#climate-disc)'>{rects}</g>\
+             <circle cx='60' cy='60' r='56' fill='none' stroke='rgba(148,163,184,0.35)' stroke-width='1.5'/>\
+             <line x1='4' y1='60' x2='116' y2='60' stroke='rgba(15,23,42,0.6)' stroke-width='1' stroke-dasharray='3 3'/>\
+             </svg>"
+        )
+    };
 
     // ── habitability ────────────────────────────────────────────────────────
     let in_hz = Signal::derive(move || {
@@ -540,6 +577,83 @@ pub fn PlanetTab() -> impl IntoView {
                                 }).collect::<Vec<_>>()}
                             </div>
                         }
+                    }}
+
+                    // climate by latitude (solid-surface planets only)
+                    {move || if is_rocky.get() {
+                        Some(view! {
+                            <SectionHeader label=move || t!(i18n, climate_section) />
+                            {move || if free_rotation.get() {
+                                view! {
+                                    <div class="flex flex-col sm:flex-row gap-5 items-center pt-1 pb-2">
+                                        <div class="shrink-0" inner_html=climate_svg() />
+                                        <div class="flex-1 w-full overflow-x-auto">
+                                            <table class="w-full text-xs">
+                                                <thead>
+                                                    <tr class="text-hint text-[10px] uppercase tracking-wider">
+                                                        <th class="text-left font-semibold py-1.5 pr-2 flex items-center gap-1">
+                                                            {t!(i18n, latitude_col)}
+                                                            <super::ui::InfoHint text=move || t!(i18n, hint_climate) />
+                                                        </th>
+                                                        <th class="text-left font-semibold py-1.5 px-2">{t!(i18n, zone_col)}</th>
+                                                        <th class="text-right font-semibold py-1.5 px-2">{t!(i18n, annual_col)}</th>
+                                                        <th class="text-right font-semibold py-1.5 px-2">{t!(i18n, summer_col)}</th>
+                                                        <th class="text-right font-semibold py-1.5 pl-2">{t!(i18n, winter_col)}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {move || climate_rows().into_iter().map(|c| {
+                                                        let color = zone_display_color(c.zone);
+                                                        let zone_name = match c.zone {
+                                                            ClimateZone::IceCap    => t_string!(i18n, zone_ice_cap),
+                                                            ClimateZone::Tundra    => t_string!(i18n, zone_tundra),
+                                                            ClimateZone::Boreal    => t_string!(i18n, zone_boreal),
+                                                            ClimateZone::Temperate => t_string!(i18n, zone_temperate),
+                                                            ClimateZone::Tropical  => t_string!(i18n, zone_tropical),
+                                                            ClimateZone::Scorched  => t_string!(i18n, zone_scorched),
+                                                        };
+                                                        view! {
+                                                            <tr class="border-t border-divider/30 hover:bg-edge/20">
+                                                                <td class="text-label font-mono py-1.5 pr-2">
+                                                                    {format!("{:.0}°", c.latitude_deg)}
+                                                                </td>
+                                                                <td class="py-1.5 px-2">
+                                                                    <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                                                        <span
+                                                                            class="w-2 h-2 rounded-full inline-block shrink-0"
+                                                                            style=format!("background:{color}")
+                                                                        />
+                                                                        <span class="text-label">{zone_name}</span>
+                                                                    </span>
+                                                                </td>
+                                                                <td class="text-heading font-mono tabular-nums text-right py-1.5 px-2">
+                                                                    {format!("{:.0}", c.annual_k - 273.15)}
+                                                                </td>
+                                                                <td class="text-heading font-mono tabular-nums text-right py-1.5 px-2">
+                                                                    {format!("{:.0}", c.summer_k - 273.15)}
+                                                                </td>
+                                                                <td class="text-heading font-mono tabular-nums text-right py-1.5 pl-2">
+                                                                    {format!("{:.0}", c.winter_k - 273.15)}
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }).collect::<Vec<_>>()}
+                                                </tbody>
+                                            </table>
+                                            <p class="text-[10px] text-hint pt-1">"°C"</p>
+                                        </div>
+                                    </div>
+                                }.into_any()
+                            } else {
+                                view! {
+                                    <p class="text-xs text-hint leading-relaxed py-2 px-3">
+                                        {t!(i18n, climate_locked_note)}
+                                    </p>
+                                }.into_any()
+                            }}
+                        })
+                    } else {
+                        None
                     }}
 
                     <SectionHeader label=move || t!(i18n, habitability) />
