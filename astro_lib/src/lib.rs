@@ -7,3 +7,4 @@ pub mod moon;
 pub mod orbit;
 pub mod planet;
 pub mod star;
+pub mod tidal;

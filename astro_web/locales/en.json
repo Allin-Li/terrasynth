@@ -72,6 +72,7 @@
     "albedo": "Albedo",
     "co2_fraction": "CO₂ fraction",
     "atmo_mass_factor": "Atmosphere mass factor",
+    "system_age": "System age",
 
     "planet_properties": "Planet properties",
     "gravity": "Gravity, g⊕",
@@ -95,6 +96,9 @@
     "gas_retention": "Gas retention",
     "in_habitable_zone": "In habitable zone",
     "habitable_tilt": "Habitable tilt, (0-80°)",
+    "tidal_locking": "Tidal locking",
+    "tidal_lock_time": "Tidal lock time",
+    "avoids_tidal_lock": "Avoids tidal lock",
 
     "parent_planet": "Parent planet",
     "radius": "Radius",
@@ -216,6 +220,9 @@
     "hint_gas_retention": "Which gases the atmosphere can retain, based on the Jeans escape criterion. A planet retains a gas if escape velocity > 6× the gas's thermal velocity at the exosphere. Lighter gases (H₂, He) escape most easily.",
     "hint_in_hz": "Whether the planet's orbit falls within the habitable zone — the range of distances from the star where liquid water could exist on a rocky surface. Based on stellar luminosity.",
     "hint_habitable_tilt": "Axial tilt between 0° and 80° is considered habitable. Extreme tilt (>80°) causes catastrophic temperature swings: polar regions bake while equator freezes, then reverses. Uranus-like tilt is hostile to complex life.",
+    "hint_system_age": "Age of the star system in billions of years. Used to decide whether the planet has had enough time to become tidally locked. Solar System ≈ 4.6 Gyr. Life on Earth took ~1 Gyr to appear and ~4 Gyr for complex forms.",
+    "hint_tidal_lock_time": "Order-of-magnitude time for stellar tides to stop the planet's rotation and lock one face toward the star (Gladman et al. 1996; assumes a rocky planet with ~12 h initial spin). Earth ≈ 10¹¹–10¹² yr (never locks); planets in the HZ of red dwarfs lock within ~1 Myr. Real values scatter by ~100×.",
+    "hint_avoids_tidal_lock": "Whether the planet keeps its day-night cycle: lock time > system age. Tidally locked planets have a permanent scorching dayside and frozen nightside — habitability is only possible near the terminator or with a thick heat-redistributing atmosphere. Common around red dwarfs.",
 
     "hint_planet_mass_moon": "Mass of the parent planet relative to Earth. Determines the Hill sphere (gravitational reach for moons), orbital periods of moons, and tidal effects. Earth = 1, Jupiter ≈ 317.8.",
     "hint_planet_radius_moon": "Radius of the parent planet relative to Earth (6,371 km). Used to express moon distances in planet radii and compute angular sizes. Earth = 1, Jupiter ≈ 11.2.",

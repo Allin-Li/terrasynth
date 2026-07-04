@@ -9,12 +9,13 @@ use astro_lib::planet::{
     surface_area, volume,
 };
 use astro_lib::star::{habitable_zone, luminosity, radius, temperature};
+use astro_lib::tidal::{is_tidally_locked, planet_lock_time_years, RIGIDITY_ROCKY};
 use crate::i18n::*;
 use leptos::prelude::*;
 
 use super::compare::{CompareTable, Snapshot};
 use super::storage::{ls_bool, ls_f64};
-use super::ui::{filter_numeric, BoolRow, NumberInput, ResultRow, SectionHeader};
+use super::ui::{filter_numeric, fmt_years, BoolRow, NumberInput, ResultRow, SectionHeader};
 
 #[component]
 pub fn PlanetTab() -> impl IntoView {
@@ -27,6 +28,7 @@ pub fn PlanetTab() -> impl IntoView {
     let semi_major    = ls_f64("planet_semi_major", 1.0);
     let eccentricity  = ls_f64("planet_eccentricity", 0.017);
     let axial_tilt    = ls_f64("planet_axial_tilt", 23.4);
+    let system_age    = ls_f64("system_age_gyr", 4.6);
 
     // star mass: linked from star tab by default, or custom override
     let shared_star_mass  = ls_f64("star_mass", 1.0);
@@ -93,6 +95,15 @@ pub fn PlanetTab() -> impl IntoView {
     // ── axial tilt ──────────────────────────────────────────────────────────
     let tropic  = move || tropic_latitude(axial_tilt.get());
     let polar   = move || polar_circle(axial_tilt.get());
+
+    // ── tidal locking ───────────────────────────────────────────────────────
+    let lock_time = move || planet_lock_time_years(
+        planet_mass.get(), eff_radius.get(), star_mass.get(), semi_major.get(),
+        RIGIDITY_ROCKY,
+    );
+    let free_rotation = Signal::derive(move || {
+        !is_tidally_locked(lock_time(), system_age.get() * 1e9)
+    });
 
     // ── atmosphere ──────────────────────────────────────────────────────────
     let star_temp_rel = move || temperature(star_mass.get()).unwrap_or(1.0);
@@ -215,6 +226,8 @@ pub fn PlanetTab() -> impl IntoView {
                         hint=move || t!(i18n, hint_eccentricity) />
                     <NumberInput label=move || t!(i18n, axial_tilt) value=axial_tilt unit="°" step="0.1"
                         hint=move || t!(i18n, hint_axial_tilt) />
+                    <NumberInput label=move || t!(i18n, system_age) value=system_age unit="Gyr" step="0.1"
+                        hint=move || t!(i18n, hint_system_age) />
 
                     // Star mass: linked from Star tab or custom
                     <div class="flex flex-col gap-1.5">
@@ -343,6 +356,12 @@ pub fn PlanetTab() -> impl IntoView {
                                     (lbl!(habitable_tilt),    if is_habitable_tilt(t) { "✓" } else { "✗" }.to_string()),
                                 ];
 
+                                // tidal locking snapshot rows
+                                let lt = planet_lock_time_years(m, r, sm, a, RIGIDITY_ROCKY);
+                                let free = !is_tidally_locked(lt, system_age.get() * 1e9);
+                                rows.push((lbl!(tidal_lock_time),  fmt_years(lt)));
+                                rows.push((lbl!(avoids_tidal_lock), if free { "✓" } else { "✗" }.to_string()));
+
                                 // atmosphere snapshot rows
                                 let g = gravity(m, r);
                                 let ve = escape_velocity(m, r);
@@ -461,6 +480,12 @@ pub fn PlanetTab() -> impl IntoView {
                         {move || format!("{:.1}", polar())}
                     </ResultRow>
 
+                    <SectionHeader label=move || t!(i18n, tidal_locking) />
+                    <ResultRow label=move || t!(i18n, tidal_lock_time)
+                        hint=move || t!(i18n, hint_tidal_lock_time)>
+                        {move || fmt_years(lock_time())}
+                    </ResultRow>
+
                     <SectionHeader label=move || t!(i18n, atmosphere) />
                     <ResultRow label=move || t!(i18n, equilibrium_temp)
                         hint=move || t!(i18n, hint_eq_temp)>
@@ -522,6 +547,8 @@ pub fn PlanetTab() -> impl IntoView {
                         hint=move || t!(i18n, hint_in_hz) />
                     <BoolRow label=move || t!(i18n, habitable_tilt) value=good_tilt
                         hint=move || t!(i18n, hint_habitable_tilt) />
+                    <BoolRow label=move || t!(i18n, avoids_tidal_lock) value=free_rotation
+                        hint=move || t!(i18n, hint_avoids_tidal_lock) />
                 </div>
             </div>
 

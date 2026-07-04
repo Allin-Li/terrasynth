@@ -20,6 +20,22 @@ pub fn fmt_result<E: std::fmt::Display>(r: Result<f64, E>, precision: usize) -> 
     }
 }
 
+/// Format a timescale in years with an adaptive unit (yr / kyr / Myr / Gyr,
+/// scientific notation above 10¹³ yr).
+pub fn fmt_years(years: f64) -> String {
+    if years >= 1e13 {
+        format!("{years:.1e} yr")
+    } else if years >= 1e9 {
+        format!("{:.2} Gyr", years / 1e9)
+    } else if years >= 1e6 {
+        format!("{:.2} Myr", years / 1e6)
+    } else if years >= 1e3 {
+        format!("{:.1} kyr", years / 1e3)
+    } else {
+        format!("{years:.0} yr")
+    }
+}
+
 /// A single label/value row used throughout all result panels.
 #[component]
 pub fn ResultRow(
