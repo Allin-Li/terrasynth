@@ -129,6 +129,8 @@
     "clear_all": "Clear all",
     "property": "Property",
     "md_modal_title": "Markdown — select all & copy",
+    "share_link": "Share",
+    "share_modal_title": "World link — select & copy. Anyone opening it gets these inputs",
 
     "switch_lang": "RU",
 

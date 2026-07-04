@@ -2,7 +2,7 @@ mod components;
 
 include!(concat!(env!("OUT_DIR"), "/i18n/mod.rs"));
 
-use components::{MoonTab, PlanetTab, StarTab, Tab, TabBar};
+use components::{MoonTab, PlanetTab, ShareButton, StarTab, Tab, TabBar};
 use i18n::*;
 use leptos::prelude::*;
 
@@ -45,14 +45,17 @@ fn AppInner(active_tab: RwSignal<Tab>) -> impl IntoView {
                             {t!(i18n, app_subtitle)}
                         </p>
                     </div>
-                    <button
-                        class="text-[11px] font-semibold px-3 py-1.5 rounded-lg cursor-pointer
-                               bg-edge/40 text-hint ring-1 ring-edge
-                               hover:text-label hover:bg-edge/60 mt-2"
-                        on:click=on_switch
-                    >
-                        {t!(i18n, switch_lang)}
-                    </button>
+                    <div class="flex gap-2">
+                        <ShareButton />
+                        <button
+                            class="text-[11px] font-semibold px-3 py-1.5 rounded-lg cursor-pointer
+                                   bg-edge/40 text-hint ring-1 ring-edge
+                                   hover:text-label hover:bg-edge/60 mt-2"
+                            on:click=on_switch
+                        >
+                            {t!(i18n, switch_lang)}
+                        </button>
+                    </div>
                 </header>
 
                 <TabBar active_tab=active_tab />
@@ -70,5 +73,8 @@ fn AppInner(active_tab: RwSignal<Tab>) -> impl IntoView {
 }
 
 fn main() {
+    // Import shared world state from the URL hash before any
+    // localStorage-backed signal reads its initial value.
+    components::import_from_hash();
     leptos::mount::mount_to_body(App);
 }
