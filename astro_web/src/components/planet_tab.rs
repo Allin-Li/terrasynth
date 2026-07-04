@@ -129,22 +129,16 @@ pub fn PlanetTab() -> impl IntoView {
 
     // ── climate by latitude ─────────────────────────────────────────────────
     // Bands from −90° (south) to +90° (north); with an eccentric orbit the
-    // hemispheres differ, so the table collapses to 0–90° only when the
-    // perihelion asymmetry is negligible.
+    // hemispheres differ, so the table has a hemisphere switch. The disc
+    // always shows both hemispheres.
+    let show_south = RwSignal::new(false);
     let climate_rows = move || {
         let rows = climate_bands(axial_tilt.get(), t_surf(), eccentricity.get(), peri_long.get());
-        // Earth's tiny eccentricity gives a ~2 K hemisphere skew — below
-        // this threshold showing both hemispheres is noise, not signal.
-        let symmetric = (0..6).all(|i| {
-            let (s, n) = (&rows[i], &rows[12 - i]);
-            (s.summer_k - n.summer_k).abs() < 2.5 && (s.winter_k - n.winter_k).abs() < 2.5
-        });
-        let shown = if symmetric {
-            rows[6..].to_vec()
+        if show_south.get() {
+            rows[..7].iter().rev().copied().collect::<Vec<_>>()
         } else {
-            rows.into_iter().rev().collect()
-        };
-        (shown, symmetric)
+            rows[6..].to_vec()
+        }
     };
 
     // Planet disc colored by climate zone bands (computed at band midpoints).
@@ -608,6 +602,36 @@ pub fn PlanetTab() -> impl IntoView {
                                     <div class="flex flex-col sm:flex-row gap-5 items-center pt-1 pb-2">
                                         <div class="shrink-0" inner_html=climate_svg() />
                                         <div class="flex-1 w-full overflow-x-auto">
+                                            <div class="flex items-center gap-1.5 pb-1.5">
+                                                <button
+                                                    class=move || {
+                                                        if !show_south.get() {
+                                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
+                                                             bg-accent/15 text-accent ring-1 ring-accent/20"
+                                                        } else {
+                                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
+                                                             bg-edge/40 text-hint ring-1 ring-edge hover:text-label"
+                                                        }
+                                                    }
+                                                    on:click=move |_| show_south.set(false)
+                                                >
+                                                    {t!(i18n, hemisphere_north)}
+                                                </button>
+                                                <button
+                                                    class=move || {
+                                                        if show_south.get() {
+                                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
+                                                             bg-accent/15 text-accent ring-1 ring-accent/20"
+                                                        } else {
+                                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
+                                                             bg-edge/40 text-hint ring-1 ring-edge hover:text-label"
+                                                        }
+                                                    }
+                                                    on:click=move |_| show_south.set(true)
+                                                >
+                                                    {t!(i18n, hemisphere_south)}
+                                                </button>
+                                            </div>
                                             <table class="w-full text-xs">
                                                 <thead>
                                                     <tr class="text-hint text-[10px] uppercase tracking-wider">
@@ -622,15 +646,9 @@ pub fn PlanetTab() -> impl IntoView {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {move || { let (rows, symmetric) = climate_rows(); rows.into_iter().map(move |c| {
+                                                    {move || climate_rows().into_iter().map(|c| {
                                                         let color = zone_display_color(c.zone);
-                                                        let lat_label = if symmetric || c.latitude_deg == 0.0 {
-                                                            format!("{:.0}°", c.latitude_deg.abs())
-                                                        } else if c.latitude_deg > 0.0 {
-                                                            format!("{:.0}° {}", c.latitude_deg, t_string!(i18n, lat_north))
-                                                        } else {
-                                                            format!("{:.0}° {}", -c.latitude_deg, t_string!(i18n, lat_south))
-                                                        };
+                                                        let lat_label = format!("{:.0}°", c.latitude_deg.abs());
                                                         // round first so −0.4 °C prints as 0, not "-0"
                                                         let fmt_c = |k: f64| {
                                                             let deg = (k - 273.15).round() + 0.0;
@@ -669,7 +687,7 @@ pub fn PlanetTab() -> impl IntoView {
                                                                 </td>
                                                             </tr>
                                                         }
-                                                    }).collect::<Vec<_>>() }}
+                                                    }).collect::<Vec<_>>()}
                                                 </tbody>
                                             </table>
                                             <p class="text-[10px] text-hint pt-1">"°C"</p>
