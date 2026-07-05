@@ -267,5 +267,98 @@
     "flora_reasoning_f": "F-type star peaks in blue. Flora absorbs the dominant blue and green wavelengths, reflecting yellow-orange. Plants would appear orange or golden.",
     "flora_reasoning_g": "G-type star (like our Sun) peaks near green-yellow. Flora absorbs red and blue photons (most energy-efficient) while reflecting green. This is why Earth plants are green.",
     "flora_reasoning_k": "K-type star peaks in orange-red. Flora absorbs the dominant orange/red photons and most visible light, reflecting the least useful blue wavelengths. Plants would appear blue-purple.",
-    "flora_reasoning_m": "M-dwarf star is dim and peaks in infrared. Flora must absorb every available photon across all visible wavelengths to gather enough energy. Plants would appear black or very dark purple."
+    "flora_reasoning_m": "M-dwarf star is dim and peaks in infrared. Flora must absorb every available photon across all visible wavelengths to gather enough energy. Plants would appear black or very dark purple.",
+
+    "tab_reference": "Reference",
+    "ref_intro": "What every input and output of the calculator actually means: in-depth articles on each property of the star, the planet and the moons — with Solar System examples and consequences for invented worlds. Click a heading to expand the article.",
+
+    "ref_star_mass": "Star mass",
+    "ref_star_mass_body": "Mass is the star's master dial: the calculator derives everything else from it — luminosity, temperature, color, radius and lifespan. It is measured in solar masses (M☉): red dwarfs are 0.08–0.5, the Sun is exactly 1, hot blue-white stars start around 1.5.\nThe worldbuilding rule: the heavier the star, the brighter it shines and the faster it burns out. A 2 M☉ star gives 11 times more light but lives under 2 billion years — barely enough for evolution to get started. A 0.3 M☉ dwarf will smolder steadily for hundreds of billions.",
+
+    "ref_luminosity": "Luminosity",
+    "ref_luminosity_body": "Luminosity is the star's total radiated power across all wavelengths, in solar units (L☉). For main-sequence stars it climbs steeply with mass: L ∝ M³·⁵. Double the mass and you get an order of magnitude more light.\nLuminosity draws the whole geography of the system: the habitable zone, the frost line and every other comfort distance scale as √L. A planet around a dim star has to huddle close — with all the consequences, tidal locking included.",
+
+    "ref_spectral": "Temperature & spectral class",
+    "ref_spectral_body": "Surface temperature sets the star's color and its letter in the O–B–A–F–G–K–M classification: from blue stars hotter than 30,000 K down to red dwarfs below 3,800 K. The Sun is a class G yellow dwarf (5,772 K). The astronomers' classic mnemonic: Oh Be A Fine Girl, Kiss Me.\nThe class is a ready-made palette for your world: the color of the sky and sunsets, the tint of noon light, even the hue of foliage (see Plant color). Under a K star the day is warm and amber; under an F star the light is harsher and whiter than Earth's.",
+
+    "ref_star_radius": "Star radius",
+    "ref_star_radius_body": "Radius is not an input — it follows from the Stefan–Boltzmann law: L = 4πR²σT⁴. Knowing the total power and how hot each square meter of surface is, we get the surface area, and from it the radius in solar radii (R☉).\nRadius decides how the sun looks from the planet and how deep eclipses are in binary systems. Seen from a close-in habitable planet, a red dwarf can loom larger in the sky than our Sun: the star is small, but the planet hugs it tightly.",
+
+    "ref_lifetime": "Stellar lifetime",
+    "ref_lifetime_body": "A star lives while its core still has hydrogen: lifetime is fuel supply divided by burn rate, i.e. t ∝ M/L = M⁻²·⁵ in units of the Sun's ~10 billion years. A 1.5 M☉ star gets about 3.6 billion years; M dwarfs will outlast the current age of the Universe many times over.\nFor an inhabited world this is a hard deadline: Earth needed ~4 billion years to go from first cells to minds. A world around a bright F star may simply run out of time — its sun leaves the main sequence first.",
+
+    "ref_peak_wl": "Peak emission wavelength",
+    "ref_peak_wl_body": "Wien's displacement law: the hotter the body, the shorter the wavelength at which it shines brightest. The Sun peaks near 500 nm, in the blue-green; red dwarfs peak in the infrared, hot stars in the ultraviolet.\nThe peak is the key to biology: photosynthesis tunes itself to the most abundant light (hence the flora pigment prediction on the star tab), and evolution calibrates local eyes to the same maximum. A world around an M dwarf is a world of infrared vision.",
+
+    "ref_hz": "The habitable zone",
+    "ref_hz_body": "The habitable zone (the Goldilocks zone) is the ring of distances where starlight allows liquid water on the surface: from 0.95·√L to 1.37·√L AU. For the Sun that is 0.95–1.37 AU: Earth is inside, Venus already past the inner edge.\nThe zone is a guideline, not a guarantee. Mars sits almost at the edge yet is too small and lost its atmosphere; a planet inside the zone with a very high albedo will still freeze. What decides is the final surface temperature on the planet tab.",
+
+    "ref_frost": "The frost line",
+    "ref_frost_body": "The frost line (snow line) is the distance, 4.85·√L AU, beyond which water ice in the protoplanetary disk stops evaporating. Out there planetary embryos had several times more solid material, which is why giants grow beyond it: for the Sun it sits at ≈ 4.9 AU, with Jupiter right behind it.\nIt makes a handy survey line when designing a system: rocky worlds inside, giants and icy worlds outside. A giant found closer in (a hot Jupiter) is the trace of a migration that would most likely have thrown the small planets out.",
+
+    "ref_bounds": "Planetary system boundaries",
+    "ref_bounds_body": "The inner boundary, ≈ 0.1·M AU: any closer and the young star scorched and swept the dust away, leaving nothing for a planet to form from. The outer, ≈ 40·M AU: beyond it the disk is too thin and slow — nothing large can grow there within the system's lifetime.\nThese are boundaries of formation, not of travel: once born, a planet can migrate. But a system left the way it grew keeps all its orbits between these marks.",
+
+    "ref_star_hab": "Which stars suit life",
+    "ref_star_hab_body": "The calculator treats 0.6–1.4 M☉ as the optimal range. Lighter, and the habitable zone is pressed against the star: the planet gets tidally locked and red-dwarf flares strip its atmosphere. Heavier, and the star lives too briefly and floods its planets with ultraviolet.\nThis is a risk marker, not a ban. Worlds around M dwarfs are science fiction's favorite playground (eternal day on one side!) — their habitability just comes with caveats and luck.",
+
+    "ref_binary": "Binary stars: S-type & P-type",
+    "ref_binary_body": "About half the stars in the Galaxy come in pairs. A planet can orbit one star of the pair (S-type) or both at once (P-type, circumbinary — like Tatooine). The second star limits stable orbits: S-type has a maximum radius (roughly a quarter to a third of the stellar separation, less at high eccentricity), P-type a minimum one (2–4 times the separation).\nThe calculator gives both critical orbits, the combined luminosity and the pair's period. Keep the planet well clear of the limit: right at the boundary the orbit turns chaotic.",
+
+    "ref_flora": "Alien plant color",
+    "ref_flora_body": "Earth's foliage is green for a reason: chlorophyll greedily absorbs the Sun's red and blue light and reflects the spare middle of the spectrum — green. Around another star the balance shifts: photosynthesis tunes to its emission peak, and the reflected color changes.\nThe model predicts the pigment from the spectral class: under K stars foliage drifts toward blue-purple, around M dwarfs black is best — swallow every scrap of the meager light. Under harsh A and B stars surface flora struggles at all: without an ozone layer, photosynthesis hides underwater.",
+
+    "ref_ptype": "Mass, radius & planet type",
+    "ref_ptype_body": "Mass in Earth masses (M⊕) sorts planets into types: up to 2 M⊕ rocky, up to 10 a sub-Neptune, up to 300 a gas giant, beyond that a super-Jovian. The radius can be entered by hand or left to an empirical mass–radius relation for each type.\nThe type answers the first question about any world: is there a surface to stand on? Sub-Neptunes and giants have none — surface area, volume and climate bands are not computed for them, and life is conceivable only in the cloud decks.",
+
+    "ref_gravity": "Gravity & density",
+    "ref_gravity_body": "Surface gravity g ∝ M/R², in Earth units. Density (also relative to Earth) hints at composition: around 1 means rock and iron, well below it ice or a puffy atmosphere, above it a world with an enormous iron core.\nFor the inhabitants, g is everything: the build and skeleton of creatures, the height of mountains (which falls roughly as 1/g), the behavior of water, and the price of reaching space. At 2g birds struggle to fly — and rockets doubly so.",
+
+    "ref_escape": "Escape velocity & holding onto gas",
+    "ref_escape_body": "Escape velocity, √(2GM/R), is the threshold for leaving the planet for good; Earth's is 11.2 km/s. The same threshold works against the atmosphere: when a gas's thermal speed approaches a sixth of escape velocity, that gas leaks into space over geological time.\nLight molecules are the fastest: Earth cannot hold hydrogen or helium, while Jupiter holds everything. The gas retention table shows which atmospheres are possible at all; a world that cannot keep N₂ and H₂O stays dry and airless, whatever the habitable zone promises.",
+
+    "ref_orbit_a": "Semi-major axis: year & speed",
+    "ref_orbit_a_body": "The semi-major axis a is the mean distance to the star in astronomical units (1 AU = the Earth–Sun distance). Kepler's third law gives the year: T = √(a³/M) years — the period grows faster than the distance. Orbital speed does the opposite: Mercury races at 47 km/s, Neptune crawls at 5.4.\nThe year is the rhythm of the whole world: the length of seasons, migration cycles, the calendars of civilizations. In the habitable zone of a red dwarf a year lasts Earth weeks: seasons never get going, but tides and eclipses beat time constantly.",
+
+    "ref_ecc": "Eccentricity: perihelion & aphelion",
+    "ref_ecc_body": "Eccentricity e measures how stretched the orbit is: 0 is a circle, values near 1 a cigar. The closest point to the star is perihelion, a·(1−e); the farthest is aphelion, a·(1+e). Earth has e = 0.017 (the distance varies by only ±1.7%); Mars has 0.093, and it already shows in its climate.\nThe light flux changes as the square of distance: at e = 0.3 the planet receives 3.4 times more energy at perihelion than at aphelion. Such a world lives not by hemispheric winters and summers but by a great summer of the whole planet at once — the climate table shows how the seasons skew.",
+
+    "ref_peri": "Perihelion longitude",
+    "ref_peri_body": "Perihelion longitude answers the question: in which season is the planet closest to its star? It is measured from the northern hemisphere's spring equinox: 90° puts perihelion at northern summer, 270° at northern winter. Earth's is currently ≈ 283°: we are closest to the Sun in early January.\nHence the hemispheric asymmetry: the hemisphere whose summer coincides with perihelion gets a hotter summer and a colder winter — the contrast sharpens. That is how southern Mars lives: its overheated summer launches global dust storms.",
+
+    "ref_tilt": "Axial tilt: seasons, tropics, polar circles",
+    "ref_tilt_body": "The tilt of the axis to the orbital plane is the engine of seasons: summer comes to the hemisphere leaning toward the star. It also draws the geography: the tropics lie at a latitude equal to the tilt (where the sun can stand at zenith), the polar circles at 90° minus the tilt (beyond them come polar day and night).\nEarth's 23.4° is a sweet spot. At 0° seasons vanish and weather freezes in place. Past ~54° things get exotic: over a year the poles receive more heat than the equator. Beyond 90° the planet spins lying down or backwards, like Uranus; by Dole's criterion, tilts up to 80° count as comfortable.",
+
+    "ref_temp": "Temperature: albedo & greenhouse",
+    "ref_temp_body": "The equilibrium temperature is what the planet would measure with no atmosphere: a balance between absorbed starlight and its own thermal emission. Albedo is the fraction of light reflected (0.3 for Earth, ~0.75 for cloudy Venus): the whiter the world, the colder it is, all else being equal.\nGreenhouse gases return part of the outgoing heat to the surface — that is exactly the difference between the equilibrium and the true temperature. The greenhouse gives Earth +33 K (without it: −18 °C and global ice), and Venus hundreds of degrees. The CO₂ and atmosphere-mass dials control precisely this bonus.",
+
+    "ref_atmo": "Pressure & scale height",
+    "ref_atmo_body": "Surface pressure is estimated from the atmosphere's mass and gravity: the same gas presses harder on a high-g planet. The scale height is how many kilometers of altitude it takes for pressure to drop by a factor of e ≈ 2.72: about 8.5 km on Earth, more on light Mars, while heavy worlds keep their atmosphere pinned in a thin layer.\nScale height sets the altitude of cloud decks and flight, how quickly mountains rise out of the atmosphere, and the color of the sky on the summits. On a world with a small scale height, the high ridges poke into near-space.",
+
+    "ref_tidal": "Tidal locking",
+    "ref_tidal_body": "The star's tidal forces brake the planet's spin until a day equals a year — then the planet faces its star with one side forever, like the Moon faces Earth. The locking time is wildly sensitive to distance (∝ a⁶): a little closer means millions of years, a little farther means never.\nThe calculator compares the locking time with the system's age. A locked world is eternal day on one side, eternal night on the other, and a ring of twilight between; latitude climate bands do not apply to it, as the planet tab honestly warns.",
+
+    "ref_climate": "Climate bands",
+    "ref_climate_body": "The model slices the planet into 15° latitude bands and computes for each the annual insolation (axial tilt + eccentricity + perihelion longitude), atmospheric heat transport and the seasonal swing. From its summer and winter temperatures each band gets a simplified Köppen class — from tropics to ice cap, plus a scorched class for worlds hotter than any life.\nThe disc next to the table is the planet's portrait: the colored stripes are the bands, and the tabs switch between hemispheres. Play with the tilt and the eccentricity — the band map responds instantly.",
+
+    "ref_age": "System age",
+    "ref_age_body": "The age in billions of years (Gyr) is the judge in two questions: has the planet had time to become tidally locked, and has life had time to grow complex. The Solar System is 4.6 billion years old; Earth's oxygen atmosphere and multicellular life took billions of years of evolution.\nA young system also means bombardment: for the first few hundred million years the orbits are not yet swept clean, sterilizing impacts are routine, and moons and rings are still taking shape.",
+
+    "ref_hill": "Hill sphere & stable orbits",
+    "ref_hill_body": "The Hill sphere is the region where the planet's pull beats the star's tidal influence: r = a·∛(m/3M). Inside it the planet can in principle keep moons, but orbits near the edge are short-lived, so the practical ceiling is half the Hill sphere.\nEarth's Hill sphere is ≈ 235 planet radii, and the Moon sits at 60 — deep and safe. The closer the planet to its star and the lighter it is, the smaller the sphere: around Mercury, moons simply do not survive.",
+
+    "ref_roche": "The Roche limit",
+    "ref_roche_body": "The Roche limit is the distance below which the planet's tides tear a satellite apart faster than its own gravity can hold it together: ≈ 2.44·R·∛(planet ρ / moon ρ) for loosely bound bodies. A monolithic rock can edge a bit closer — but not for long.\nA moon past the limit does not fall — it smears into a ring: all the great rings of the giants lie inside their Roche limits. Want your world to have rings? Move a moon in, or break one.",
+
+    "ref_moon_props": "Moon mass & gravity",
+    "ref_moon_props_body": "The moon's mass is derived from its radius and density (both in Earth units): M = ρ·R³. Our Moon: radius 0.273 R⊕ and density 0.606 ρ⊕ give 0.0123 M⊕ and gravity 0.166 g — one sixth of Earth's.\nGravity decides whether the moon can keep an atmosphere and how colonists' jumps look. And the moon-to-planet mass ratio sets the strength of the return tides: our Moon is anomalously large — hence the powerful ocean tides and the stabilized tilt of Earth's axis.",
+
+    "ref_moon_sky": "Angular size: the moon in the sky",
+    "ref_moon_sky_body": "Angular size is how big the satellite looks from the surface: diameter divided by distance, in arcminutes. Our Moon and Sun are both about 30′ (half a degree) — a rare coincidence that gives us total eclipses with a visible corona.\nA 60′ satellite is twice the Moon's width and floods the night with light; a 5′ one is just a bright dot. Compare it with the angular size of the local sun: if the moon is larger, total eclipses are frequent; if smaller, only annular ones happen.",
+
+    "ref_moon_period": "Moon orbital period",
+    "ref_moon_period_body": "The period follows Kepler's third law from the distance (in planet radii) and the planet's mass. The Moon at 60.3 R⊕ circles Earth in 27.3 days — that is where the month came from as a unit of time.\nThe moon's period is a culture's metronome: months, tides, night navigation and hunting by phases. A close moon with a period of a couple of days brings furious tides and a sky where the phase changes before your eyes.",
+
+    "ref_moon_multi": "Multiple moons: stability & resonances",
+    "ref_moon_multi_body": "Two moons are too crowded if their distances from the planet differ by less than a factor of 1.3 — the calculator marks such pairs as too close. A crowded pair has one ending: a collision, or one moon thrown out.\nA separate badge marks resonance: the periods relate as small whole numbers (2:1, 3:2, 5:3…), so the gravitational nudges repeat in the same phase. Resonance can stabilize a system (Io–Europa–Ganymede at Jupiter) or pump an orbit up — and it heats interiors with tides along the way: Io's volcanoes are paid for by exactly this."
 }
