@@ -267,13 +267,24 @@ pub fn ReferenceTab() -> impl IntoView {
         }
     };
 
-    let group_header = |icon: &'static str, label: Signal<String>| {
+    // Collapsible nav groups: only the first one starts open, so the menu
+    // stays short.
+    let open_star   = RwSignal::new(true);
+    let open_planet = RwSignal::new(false);
+    let open_moon   = RwSignal::new(false);
+
+    let group_btn = |icon: &'static str, label: Signal<String>, open: RwSignal<bool>| {
         view! {
-            <p class="flex items-center gap-2 text-[10px] font-semibold text-hint
-                      uppercase tracking-widest px-3 pt-4 pb-1 first:pt-1">
+            <button
+                class="w-full flex items-center gap-2 text-[10px] font-semibold text-hint
+                       uppercase tracking-widest px-3 pt-4 pb-1 first:pt-1 text-left
+                       cursor-pointer hover:text-label"
+                on:click=move |_| open.update(|v| *v = !*v)
+            >
                 <span class="text-accent text-xs">{icon}</span>
-                {move || label.get()}
-            </p>
+                <span class="flex-1">{move || label.get()}</span>
+                <span>{move || if open.get() { "▾" } else { "▸" }}</span>
+            </button>
         }
     };
 
@@ -292,18 +303,24 @@ pub fn ReferenceTab() -> impl IntoView {
                 // ── Article navigation ──────────────────────────────────────
                 <nav class="bg-card border border-edge rounded-2xl p-3 flex flex-col
                             lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-                    {group_header("★", g_star)}
-                    {star_arts.iter().enumerate()
-                        .map(|(i, a)| nav_btn(i, a.0))
-                        .collect::<Vec<_>>()}
-                    {group_header("◉", g_planet)}
-                    {planet_arts.iter().enumerate()
-                        .map(|(i, a)| nav_btn(off_planet + i, a.0))
-                        .collect::<Vec<_>>()}
-                    {group_header("☽", g_moon)}
-                    {moon_arts.iter().enumerate()
-                        .map(|(i, a)| nav_btn(off_moon + i, a.0))
-                        .collect::<Vec<_>>()}
+                    {group_btn("★", g_star, open_star)}
+                    <div class=move || if open_star.get() { "flex flex-col" } else { "hidden" }>
+                        {star_arts.iter().enumerate()
+                            .map(|(i, a)| nav_btn(i, a.0))
+                            .collect::<Vec<_>>()}
+                    </div>
+                    {group_btn("◉", g_planet, open_planet)}
+                    <div class=move || if open_planet.get() { "flex flex-col" } else { "hidden" }>
+                        {planet_arts.iter().enumerate()
+                            .map(|(i, a)| nav_btn(off_planet + i, a.0))
+                            .collect::<Vec<_>>()}
+                    </div>
+                    {group_btn("☽", g_moon, open_moon)}
+                    <div class=move || if open_moon.get() { "flex flex-col" } else { "hidden" }>
+                        {moon_arts.iter().enumerate()
+                            .map(|(i, a)| nav_btn(off_moon + i, a.0))
+                            .collect::<Vec<_>>()}
+                    </div>
                 </nav>
 
                 // ── Open article ────────────────────────────────────────────
