@@ -270,7 +270,7 @@
     "flora_reasoning_m": "M-dwarf star is dim and peaks in infrared. Flora must absorb every available photon across all visible wavelengths to gather enough energy. Plants would appear black or very dark purple.",
 
     "tab_reference": "Reference",
-    "ref_intro": "What every input and output of the calculator actually means: in-depth articles on each property of the star, the planet and the moons — with Solar System examples and consequences for invented worlds. Click a heading to expand the article.",
+    "ref_intro": "What every input and output of the calculator actually means: in-depth articles on each property of the star, the planet and the moons — with Solar System examples and consequences for invented worlds. Pick an article in the menu.",
 
     "ref_star_mass": "Star mass",
     "ref_star_mass_body": "Mass is the star's master dial: the calculator derives everything else from it — luminosity, temperature, color, radius and lifespan. It is measured in solar masses (M☉): red dwarfs are 0.08–0.5, the Sun is exactly 1, hot blue-white stars start around 1.5.\nThe worldbuilding rule: the heavier the star, the brighter it shines and the faster it burns out. A 2 M☉ star gives 11 times more light but lives under 2 billion years — barely enough for evolution to get started. A 0.3 M☉ dwarf will smolder steadily for hundreds of billions.",

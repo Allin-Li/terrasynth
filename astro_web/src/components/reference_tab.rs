@@ -153,86 +153,26 @@ const SVG_ANGULAR: &str = "<svg viewBox='0 0 240 90' width='240' height='90' sty
 <text x='170' y='78' text-anchor='middle' font-size='9' fill='#94a3b8'>&#8776; 0.5&#176;</text>\
 </svg>";
 
-// ─── Building blocks ────────────────────────────────────────────────────────
+/// One glossary article: localized title, localized body ('\n' separates
+/// paragraphs) and an optional illustration.
+type Art = (Signal<String>, Signal<String>, Option<&'static str>);
 
-/// One collapsible glossary article: a header row that toggles the body.
-/// The body text comes as a single localized string with '\n' between
-/// paragraphs.
-#[component]
-fn Article(
-    #[prop(into)] title: ViewFn,
-    #[prop(into)] body: Signal<String>,
-    #[prop(optional)] svg: Option<&'static str>,
-) -> impl IntoView {
-    let open = RwSignal::new(false);
-    view! {
-        <div class="border-b border-divider/30 last:border-0">
-            <button
-                class="w-full flex items-center gap-2 py-2.5 px-3 text-left cursor-pointer
-                       rounded hover:bg-edge/20"
-                on:click=move |_| open.update(|v| *v = !*v)
-            >
-                <span class="text-[10px] text-hint w-3 shrink-0">
-                    {move || if open.get() { "▾" } else { "▸" }}
-                </span>
-                <span class="text-label text-sm font-medium">{title.run()}</span>
-            </button>
-            <div class=move || {
-                if open.get() { "px-8 pb-4 flex flex-col gap-3" } else { "hidden" }
-            }>
-                {svg.map(|s| view! { <div class="pt-1 overflow-x-auto" inner_html=s /> })}
-                {move || {
-                    let text = body.get();
-                    text.split('\n')
-                        .map(|p| view! {
-                            <p class="text-[13px] leading-relaxed text-label">{p.to_string()}</p>
-                        })
-                        .collect::<Vec<_>>()
-                }}
-            </div>
-        </div>
-    }
-}
-
-/// A card grouping the articles of one object (star / planet / moons).
-#[component]
-fn Group(
-    icon: &'static str,
-    #[prop(into)] title: ViewFn,
-    children: Children,
-) -> impl IntoView {
-    view! {
-        <div class="bg-card/60 border border-edge rounded-2xl p-6">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="text-base text-accent">{icon}</span>
-                <h2 class="text-xs font-semibold text-label uppercase tracking-widest">
-                    {title.run()}
-                </h2>
-            </div>
-            {children()}
-        </div>
-    }
-}
-
-/// Shorthand: an Article wired to a title key and a body key (plus an
+/// Shorthand: an article wired to a title key and a body key (plus an
 /// optional illustration).
 macro_rules! art {
     ($i18n:ident, $title:ident, $body:ident) => {
-        view! {
-            <Article
-                title=move || t!($i18n, $title)
-                body=Signal::derive(move || t_string!($i18n, $body).to_string())
-            />
-        }
+        (
+            Signal::derive(move || t_string!($i18n, $title).to_string()),
+            Signal::derive(move || t_string!($i18n, $body).to_string()),
+            None,
+        )
     };
     ($i18n:ident, $title:ident, $body:ident, $svg:expr) => {
-        view! {
-            <Article
-                title=move || t!($i18n, $title)
-                body=Signal::derive(move || t_string!($i18n, $body).to_string())
-                svg=$svg
-            />
-        }
+        (
+            Signal::derive(move || t_string!($i18n, $title).to_string()),
+            Signal::derive(move || t_string!($i18n, $body).to_string()),
+            Some($svg),
+        )
     };
 }
 
@@ -242,50 +182,159 @@ macro_rules! art {
 pub fn ReferenceTab() -> impl IntoView {
     let i18n = use_i18n();
 
+    let star_arts: Vec<Art> = vec![
+        art!(i18n, ref_star_mass, ref_star_mass_body),
+        art!(i18n, ref_luminosity, ref_luminosity_body),
+        art!(i18n, ref_spectral, ref_spectral_body, SVG_SPECTRAL),
+        art!(i18n, ref_star_radius, ref_star_radius_body),
+        art!(i18n, ref_lifetime, ref_lifetime_body),
+        art!(i18n, ref_peak_wl, ref_peak_wl_body),
+        art!(i18n, ref_hz, ref_hz_body, SVG_HZ),
+        art!(i18n, ref_frost, ref_frost_body),
+        art!(i18n, ref_bounds, ref_bounds_body),
+        art!(i18n, ref_star_hab, ref_star_hab_body),
+        art!(i18n, ref_binary, ref_binary_body, SVG_BINARY),
+        art!(i18n, ref_flora, ref_flora_body),
+    ];
+    let planet_arts: Vec<Art> = vec![
+        art!(i18n, ref_ptype, ref_ptype_body, SVG_SIZES),
+        art!(i18n, ref_gravity, ref_gravity_body),
+        art!(i18n, ref_escape, ref_escape_body),
+        art!(i18n, ref_orbit_a, ref_orbit_a_body),
+        art!(i18n, ref_ecc, ref_ecc_body, SVG_ELLIPSE),
+        art!(i18n, ref_peri, ref_peri_body),
+        art!(i18n, ref_tilt, ref_tilt_body, SVG_TILT),
+        art!(i18n, ref_temp, ref_temp_body, SVG_GREENHOUSE),
+        art!(i18n, ref_atmo, ref_atmo_body),
+        art!(i18n, ref_tidal, ref_tidal_body, SVG_TIDAL),
+        art!(i18n, ref_climate, ref_climate_body, SVG_CLIMATE_MINI),
+        art!(i18n, ref_age, ref_age_body),
+    ];
+    let moon_arts: Vec<Art> = vec![
+        art!(i18n, ref_hill, ref_hill_body, SVG_HILL),
+        art!(i18n, ref_roche, ref_roche_body),
+        art!(i18n, ref_moon_props, ref_moon_props_body),
+        art!(i18n, ref_moon_sky, ref_moon_sky_body, SVG_ANGULAR),
+        art!(i18n, ref_moon_period, ref_moon_period_body),
+        art!(i18n, ref_moon_multi, ref_moon_multi_body),
+    ];
+
+    let off_planet = star_arts.len();
+    let off_moon = off_planet + planet_arts.len();
+
+    let mut all_vec = star_arts.clone();
+    all_vec.extend(planet_arts.iter().copied());
+    all_vec.extend(moon_arts.iter().copied());
+    let all = StoredValue::new(all_vec);
+
+    let sel = RwSignal::new(0usize);
+    let content_ref = NodeRef::<leptos::html::Div>::new();
+
+    // On narrow screens the nav sits above the article, so jump to the
+    // article after picking one.
+    let scroll_to_article = move || {
+        let narrow = web_sys::window()
+            .and_then(|w| w.inner_width().ok())
+            .and_then(|v| v.as_f64())
+            .map(|w| w < 1024.0)
+            .unwrap_or(false);
+        if narrow {
+            if let Some(el) = content_ref.get() {
+                el.scroll_into_view_with_bool(true);
+            }
+        }
+    };
+
+    let nav_btn = move |idx: usize, title: Signal<String>| {
+        view! {
+            <button
+                class=move || {
+                    let base = "w-full text-left text-[13px] px-3 py-1.5 rounded-lg \
+                                cursor-pointer ";
+                    if sel.get() == idx {
+                        format!("{base}bg-accent/15 text-accent font-medium")
+                    } else {
+                        format!("{base}text-label hover:bg-edge/20 hover:text-heading")
+                    }
+                }
+                on:click=move |_| {
+                    sel.set(idx);
+                    scroll_to_article();
+                }
+            >
+                {move || title.get()}
+            </button>
+        }
+    };
+
+    let group_header = |icon: &'static str, label: Signal<String>| {
+        view! {
+            <p class="flex items-center gap-2 text-[10px] font-semibold text-hint
+                      uppercase tracking-widest px-3 pt-4 pb-1 first:pt-1">
+                <span class="text-accent text-xs">{icon}</span>
+                {move || label.get()}
+            </p>
+        }
+    };
+
+    let g_star   = Signal::derive(move || t_string!(i18n, tab_star).to_string());
+    let g_planet = Signal::derive(move || t_string!(i18n, tab_planet).to_string());
+    let g_moon   = Signal::derive(move || t_string!(i18n, tab_moon).to_string());
+
     view! {
         <div class="flex flex-col gap-6">
             <p class="text-sm text-hint leading-relaxed max-w-3xl">
                 {t!(i18n, ref_intro)}
             </p>
 
-            <Group icon="★" title=move || t!(i18n, tab_star)>
-                {art!(i18n, ref_star_mass, ref_star_mass_body)}
-                {art!(i18n, ref_luminosity, ref_luminosity_body)}
-                {art!(i18n, ref_spectral, ref_spectral_body, SVG_SPECTRAL)}
-                {art!(i18n, ref_star_radius, ref_star_radius_body)}
-                {art!(i18n, ref_lifetime, ref_lifetime_body)}
-                {art!(i18n, ref_peak_wl, ref_peak_wl_body)}
-                {art!(i18n, ref_hz, ref_hz_body, SVG_HZ)}
-                {art!(i18n, ref_frost, ref_frost_body)}
-                {art!(i18n, ref_bounds, ref_bounds_body)}
-                {art!(i18n, ref_star_hab, ref_star_hab_body)}
-                {art!(i18n, ref_binary, ref_binary_body, SVG_BINARY)}
-                {art!(i18n, ref_flora, ref_flora_body)}
-            </Group>
+            <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
 
-            <Group icon="◉" title=move || t!(i18n, tab_planet)>
-                {art!(i18n, ref_ptype, ref_ptype_body, SVG_SIZES)}
-                {art!(i18n, ref_gravity, ref_gravity_body)}
-                {art!(i18n, ref_escape, ref_escape_body)}
-                {art!(i18n, ref_orbit_a, ref_orbit_a_body)}
-                {art!(i18n, ref_ecc, ref_ecc_body, SVG_ELLIPSE)}
-                {art!(i18n, ref_peri, ref_peri_body)}
-                {art!(i18n, ref_tilt, ref_tilt_body, SVG_TILT)}
-                {art!(i18n, ref_temp, ref_temp_body, SVG_GREENHOUSE)}
-                {art!(i18n, ref_atmo, ref_atmo_body)}
-                {art!(i18n, ref_tidal, ref_tidal_body, SVG_TIDAL)}
-                {art!(i18n, ref_climate, ref_climate_body, SVG_CLIMATE_MINI)}
-                {art!(i18n, ref_age, ref_age_body)}
-            </Group>
+                // ── Article navigation ──────────────────────────────────────
+                <nav class="bg-card border border-edge rounded-2xl p-3 flex flex-col
+                            lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+                    {group_header("★", g_star)}
+                    {star_arts.iter().enumerate()
+                        .map(|(i, a)| nav_btn(i, a.0))
+                        .collect::<Vec<_>>()}
+                    {group_header("◉", g_planet)}
+                    {planet_arts.iter().enumerate()
+                        .map(|(i, a)| nav_btn(off_planet + i, a.0))
+                        .collect::<Vec<_>>()}
+                    {group_header("☽", g_moon)}
+                    {moon_arts.iter().enumerate()
+                        .map(|(i, a)| nav_btn(off_moon + i, a.0))
+                        .collect::<Vec<_>>()}
+                </nav>
 
-            <Group icon="☽" title=move || t!(i18n, tab_moon)>
-                {art!(i18n, ref_hill, ref_hill_body, SVG_HILL)}
-                {art!(i18n, ref_roche, ref_roche_body)}
-                {art!(i18n, ref_moon_props, ref_moon_props_body)}
-                {art!(i18n, ref_moon_sky, ref_moon_sky_body, SVG_ANGULAR)}
-                {art!(i18n, ref_moon_period, ref_moon_period_body)}
-                {art!(i18n, ref_moon_multi, ref_moon_multi_body)}
-            </Group>
+                // ── Open article ────────────────────────────────────────────
+                <div
+                    node_ref=content_ref
+                    class="bg-card/60 border border-edge rounded-2xl p-6 flex flex-col gap-3
+                           scroll-mt-4"
+                >
+                    {move || {
+                        let (title, body, svg) = all.with_value(|v| v[sel.get()]);
+                        view! {
+                            <h3 class="text-base font-semibold text-heading">
+                                {move || title.get()}
+                            </h3>
+                            {svg.map(|s| view! {
+                                <div class="pt-1 overflow-x-auto" inner_html=s />
+                            })}
+                            {move || {
+                                let text = body.get();
+                                text.split('\n')
+                                    .map(|p| view! {
+                                        <p class="text-[13px] leading-relaxed text-label">
+                                            {p.to_string()}
+                                        </p>
+                                    })
+                                    .collect::<Vec<_>>()
+                            }}
+                        }
+                    }}
+                </div>
+            </div>
         </div>
     }
 }
