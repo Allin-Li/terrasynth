@@ -107,6 +107,20 @@ pub fn spectral_class(temperature_rel: f64) -> SpectralClass {
     }
 }
 
+/// Approximate visual display color for a main-sequence star of the given
+/// spectral class (blackbody hues, Charity 2001).
+pub fn star_display_color(class: SpectralClass) -> &'static str {
+    match class {
+        SpectralClass::O => "#9bb0ff",
+        SpectralClass::B => "#aabfff",
+        SpectralClass::A => "#cad7ff",
+        SpectralClass::F => "#f8f7ff",
+        SpectralClass::G => "#fff4ea",
+        SpectralClass::K => "#ffd2a1",
+        SpectralClass::M => "#ffcc6f",
+    }
+}
+
 /// Peak wavelength of stellar radiation in nm (Wien's law): λ = 501.5 / T_rel
 ///
 /// 501.5 nm is the Sun's peak wavelength (T_sun ≈ 5778 K).
