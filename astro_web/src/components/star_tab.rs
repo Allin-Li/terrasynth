@@ -23,7 +23,6 @@ pub fn StarTab() -> impl IntoView {
     let mass_b        = ls_f64("star_b_mass", 0.8);
     let bin_sep       = ls_f64("binary_separation", 20.0);
     let bin_ecc       = ls_f64("binary_eccentricity", 0.4);
-    let bin_p_type    = ls_bool("binary_p_type", false);
 
     // ── computed (Star A) ───────────────────────────────────────────────────
     let lum  = move || luminosity(mass.get());
@@ -145,38 +144,6 @@ pub fn StarTab() -> impl IntoView {
                                 hint=move || t!(i18n, hint_separation) />
                             <NumberInput label=move || t!(i18n, eccentricity) value=bin_ecc step="0.01"
                                 hint=move || t!(i18n, hint_bin_eccentricity) />
-
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-label">{t!(i18n, orbit_type)}</span>
-                                <button
-                                    class=move || {
-                                        if !bin_p_type.get() {
-                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
-                                             bg-accent/15 text-accent ring-1 ring-accent/20"
-                                        } else {
-                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
-                                             bg-edge/40 text-hint ring-1 ring-edge hover:text-label"
-                                        }
-                                    }
-                                    on:click=move |_| bin_p_type.set(false)
-                                >
-                                    {t!(i18n, s_type)}
-                                </button>
-                                <button
-                                    class=move || {
-                                        if bin_p_type.get() {
-                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
-                                             bg-accent/15 text-accent ring-1 ring-accent/20"
-                                        } else {
-                                            "text-[10px] font-medium px-2 py-0.5 rounded-full cursor-pointer \
-                                             bg-edge/40 text-hint ring-1 ring-edge hover:text-label"
-                                        }
-                                    }
-                                    on:click=move |_| bin_p_type.set(true)
-                                >
-                                    {t!(i18n, p_type)}
-                                </button>
-                            </div>
                         })
                     } else {
                         None

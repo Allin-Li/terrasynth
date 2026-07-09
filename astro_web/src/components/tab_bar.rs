@@ -6,6 +6,7 @@ pub enum Tab {
     Star,
     Planet,
     Moon,
+    System,
 }
 
 #[component]
@@ -31,6 +32,7 @@ pub fn TabBar(active_tab: RwSignal<Tab>) -> impl IntoView {
                     Tab::Star   => view! { {t!(i18n, tab_star)} }.into_any(),
                     Tab::Planet => view! { {t!(i18n, tab_planet)} }.into_any(),
                     Tab::Moon   => view! { {t!(i18n, tab_moon)} }.into_any(),
+                    Tab::System => view! { {t!(i18n, tab_system)} }.into_any(),
                 }}
             </button>
         }
@@ -41,6 +43,7 @@ pub fn TabBar(active_tab: RwSignal<Tab>) -> impl IntoView {
             {btn(Tab::Star,   "★")}
             {btn(Tab::Planet, "◉")}
             {btn(Tab::Moon,   "☽")}
+            {btn(Tab::System, "⊚")}
         </nav>
     }
 }

@@ -2,7 +2,7 @@ mod components;
 
 include!(concat!(env!("OUT_DIR"), "/i18n/mod.rs"));
 
-use components::{MoonTab, PlanetTab, ShareButton, StarTab, Tab, TabBar};
+use components::{MoonTab, PlanetTab, ShareButton, StarTab, SystemTab, Tab, TabBar};
 use i18n::*;
 use leptos::prelude::*;
 
@@ -65,6 +65,7 @@ fn AppInner(active_tab: RwSignal<Tab>) -> impl IntoView {
                         Tab::Star   => view! { <StarTab /> }.into_any(),
                         Tab::Planet => view! { <PlanetTab /> }.into_any(),
                         Tab::Moon   => view! { <MoonTab /> }.into_any(),
+                        Tab::System => view! { <SystemTab /> }.into_any(),
                     }}
                 </main>
             </div>

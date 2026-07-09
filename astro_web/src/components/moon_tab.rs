@@ -3,20 +3,23 @@ use astro_lib::moon::{
     is_moon_orbit_valid, moon_gravity, moon_mass, moon_orbital_period_days, near_resonance,
     roche_limit_planet_radii, stable_orbit_limit,
 };
-use astro_lib::planet::{density, planet_radius_auto};
+use astro_lib::planet::density;
 use crate::i18n::*;
 use leptos::prelude::*;
 
 use super::compare::{CompareTable, Snapshot};
-use super::storage::{ls_bool, ls_f64, ls_f64_dyn};
-use super::ui::{filter_numeric, InfoHint, NumberInput, ResultRow, SectionHeader};
+use super::planets::{star_inputs, PlanetSigs};
+use super::storage::{load_moon_ids, load_planet_ids, ls_f64_dyn, ls_string_dyn, ls_u32_dyn, save_moon_ids};
+use super::ui::{filter_numeric, InfoHint, ResultRow, SectionHeader};
 
 const R_EARTH_KM: f64 = 6_371.0;
 
-/// Per-moon reactive state.
+/// Per-moon reactive state, persisted under `moon_{id}_*`.
 #[derive(Clone)]
 struct MoonEntry {
     id: u32,
+    parent: RwSignal<u32>,
+    name: RwSignal<String>,
     radius: RwSignal<f64>,
     density: RwSignal<f64>,
     distance: RwSignal<f64>,
@@ -36,7 +39,9 @@ fn sync_text(val: RwSignal<f64>, text: RwSignal<String>) {
 }
 
 impl MoonEntry {
-    fn new(id: u32) -> Self {
+    fn new(id: u32, default_parent: u32) -> Self {
+        let parent = ls_u32_dyn(format!("moon_{id}_parent"), default_parent);
+        let name = ls_string_dyn(format!("moon_{id}_name"), String::new());
         let radius = ls_f64_dyn(format!("moon_{id}_radius"), 0.273);
         let density = ls_f64_dyn(format!("moon_{id}_density"), 0.606);
         let distance = ls_f64_dyn(format!("moon_{id}_dist"), 60.27);
@@ -46,7 +51,10 @@ impl MoonEntry {
         sync_text(radius, radius_text);
         sync_text(density, density_text);
         sync_text(distance, distance_text);
-        Self { id, radius, density, distance, radius_text, density_text, distance_text }
+        Self {
+            id, parent, name, radius, density, distance,
+            radius_text, density_text, distance_text,
+        }
     }
 }
 
@@ -64,81 +72,55 @@ fn format_ang(total_min: f64) -> String {
 pub fn MoonTab() -> impl IntoView {
     let i18n = use_i18n();
 
-    // ── shared planet / star inputs ─────────────────────────────────────────
-    // Custom toggle: when false, values flow from planet/star tabs
-    let custom_planet = ls_bool("moon_custom_planet", false);
+    // ── parent planets & star ───────────────────────────────────────────────
+    let planets: Vec<PlanetSigs> =
+        load_planet_ids().into_iter().map(PlanetSigs::new).collect();
+    let first_planet_id = planets[0].id;
+    let stars = star_inputs();
 
-    // Shared signals (reading from planet/star tab localStorage keys)
-    let shared_planet_mass   = ls_f64("planet_mass", 1.0);
-    let shared_use_manual_r  = ls_bool("planet_use_manual_r", false);
-    let shared_manual_radius = ls_f64("planet_manual_radius", 1.0);
-    let shared_planet_orb_a  = ls_f64("planet_semi_major", 1.0);
-    // Star mass follows the chain: star → planet → moon
-    // Read from planet tab's effective star mass (which itself may link to star tab)
-    let shared_planet_custom_star = ls_bool("planet_custom_star", false);
-    let shared_planet_custom_star_mass = ls_f64("planet_custom_star_mass", 1.0);
-    let shared_star_mass_raw = ls_f64("star_mass", 1.0);
-
-    // Custom override signals (independent values for moon tab)
-    let custom_planet_mass    = ls_f64("moon_planet_mass",    1.0);
-    let custom_planet_radius  = ls_f64("moon_planet_radius",  1.0);
-    let custom_planet_density = ls_f64("moon_planet_density", 1.0);
-    let custom_planet_orb_a   = ls_f64("moon_planet_orb_a",   1.0);
-    let custom_star_mass      = ls_f64("moon_star_mass",       1.0);
-
-    // Auto-computed planet radius from planet tab's settings
-    let auto_planet_radius = move || {
-        let m = shared_planet_mass.get();
-        if shared_use_manual_r.get() {
-            shared_manual_radius.get()
+    // Localized fallback for unnamed bodies: "Planet 2" / "Планета 2".
+    let planet_name = {
+        let planets = planets.clone();
+        move |id: u32| -> String {
+            let idx = planets.iter().position(|p| p.id == id).unwrap_or(0);
+            let nm = planets[idx].name.get();
+            if nm.is_empty() {
+                format!("{} {}", t_string!(i18n, planet), idx + 1)
+            } else {
+                nm
+            }
+        }
+    };
+    let moon_name = move |m: &MoonEntry, idx: usize| -> String {
+        let nm = m.name.get();
+        if nm.is_empty() {
+            format!("{} {}", t_string!(i18n, moon), idx + 1)
         } else {
-            planet_radius_auto(m)
+            nm
         }
     };
 
-    // Auto star mass follows the planet tab's choice
-    let auto_star_mass = move || {
-        if shared_planet_custom_star.get() {
-            shared_planet_custom_star_mass.get()
-        } else {
-            shared_star_mass_raw.get()
-        }
-    };
+    // ── dynamic moon list (persisted as "moon_ids") ─────────────────────────
+    let stored_ids = load_moon_ids();
+    let next_id: RwSignal<u32> =
+        RwSignal::new(stored_ids.iter().max().map_or(1, |max| max + 1));
+    let moons: RwSignal<Vec<MoonEntry>> = RwSignal::new(
+        stored_ids
+            .into_iter()
+            .map(|id| MoonEntry::new(id, first_planet_id))
+            .collect(),
+    );
 
-    // Effective signals
-    let planet_mass = Signal::derive(move || {
-        if custom_planet.get() { custom_planet_mass.get() } else { shared_planet_mass.get() }
+    Effect::new(move |_| {
+        let ids: Vec<u32> = moons.with(|v| v.iter().map(|m| m.id).collect());
+        save_moon_ids(&ids);
     });
-    let planet_radius = Signal::derive(move || {
-        if custom_planet.get() { custom_planet_radius.get() } else { auto_planet_radius() }
-    });
-    let planet_density = Signal::derive(move || {
-        if custom_planet.get() { custom_planet_density.get() } else { density(shared_planet_mass.get(), auto_planet_radius()) }
-    });
-    let planet_orb_a = Signal::derive(move || {
-        if custom_planet.get() { custom_planet_orb_a.get() } else { shared_planet_orb_a.get() }
-    });
-    let star_mass = Signal::derive(move || {
-        if custom_planet.get() { custom_star_mass.get() } else { auto_star_mass() }
-    });
-
-    // ── dynamic moon list ───────────────────────────────────────────────────
-    let next_id: RwSignal<u32> = RwSignal::new(1);
-    let moons: RwSignal<Vec<MoonEntry>> = RwSignal::new(vec![MoonEntry::new(0)]);
 
     let add_moon = move |_| {
         let id = next_id.get();
         next_id.set(id + 1);
-        moons.update(|v| v.push(MoonEntry::new(id)));
+        moons.update(|v| v.push(MoonEntry::new(id, first_planet_id)));
     };
-
-    // ── stability (shared) ──────────────────────────────────────────────────
-    let h_au  = move || hill_sphere_au(planet_orb_a.get(), planet_mass.get(), star_mass.get());
-    let h_rp  = move || hill_sphere_planet_radii(
-        planet_orb_a.get(), planet_mass.get(), star_mass.get(), planet_radius.get(),
-    );
-    let stab_au = move || stable_orbit_limit(h_au());
-    let stab_rp = move || stable_orbit_limit(h_rp());
 
     // ── save / compare ──────────────────────────────────────────────────────
     let snapshots: RwSignal<Vec<Snapshot>> = RwSignal::new(vec![]);
@@ -146,6 +128,14 @@ pub fn MoonTab() -> impl IntoView {
     let save_count = RwSignal::new(1_u32);
 
     // ── view ────────────────────────────────────────────────────────────────
+    let input_planets = planets.clone();
+    let results_planets = planets.clone();
+    let results_planet_name = planet_name.clone();
+    let results_moon_name = moon_name.clone();
+    let snap_planets = planets.clone();
+    let snap_planet_name = planet_name.clone();
+    let snap_moon_name = moon_name.clone();
+
     view! {
         <div class="flex flex-col gap-8">
             <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
@@ -159,81 +149,8 @@ pub fn MoonTab() -> impl IntoView {
                         </h2>
                     </div>
 
-                    <div class="flex items-baseline justify-between">
-                        <p class="text-[10px] font-semibold text-hint uppercase tracking-widest">
-                            {t!(i18n, parent_planet)}
-                        </p>
-                        <button
-                            class=move || {
-                                if custom_planet.get() {
-                                    "text-[10px] font-medium px-2 py-0.5 rounded-full \
-                                     cursor-pointer \
-                                     bg-accent/15 text-accent ring-1 ring-accent/20"
-                                } else {
-                                    "text-[10px] font-medium px-2 py-0.5 rounded-full \
-                                     cursor-pointer \
-                                     bg-edge/40 text-hint ring-1 ring-edge \
-                                     hover:text-label"
-                                }
-                            }
-                            on:click=move |_| custom_planet.update(|v| *v = !*v)
-                        >
-                            {move || if custom_planet.get() { t_string!(i18n, custom) } else { t_string!(i18n, from_planet) }}
-                        </button>
-                    </div>
-
-                    {move || if custom_planet.get() {
-                        view! {
-                            <NumberInput label=move || t!(i18n, mass) value=custom_planet_mass unit="M⊕" step="0.01"
-                                hint=move || t!(i18n, hint_planet_mass_moon) />
-                            <NumberInput label=move || t!(i18n, radius) value=custom_planet_radius unit="R⊕" step="0.01"
-                                hint=move || t!(i18n, hint_planet_radius_moon) />
-                            <NumberInput label=move || t!(i18n, density_label) value=custom_planet_density unit="ρ⊕" step="0.01"
-                                hint=move || t!(i18n, hint_planet_density_moon) />
-
-                            <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
-                                {t!(i18n, star_orbit)}
-                            </p>
-                            <NumberInput label=move || t!(i18n, planet_semi_major) value=custom_planet_orb_a unit="AU" step="0.01"
-                                hint=move || t!(i18n, hint_planet_semi_major_moon) />
-                            <NumberInput label=move || t!(i18n, star_mass) value=custom_star_mass unit="M☉" step="0.01"
-                                hint=move || t!(i18n, hint_star_mass_moon) />
-                        }.into_any()
-                    } else {
-                        view! {
-                            <div class="bg-inset border border-edge rounded-lg px-3 py-2 flex flex-col gap-1.5">
-                                <div class="flex justify-between text-sm font-mono">
-                                    <span class="text-hint text-[10px]">{t!(i18n, mass)}</span>
-                                    <span class="text-accent">{move || format!("{:.3}", planet_mass.get())}<span class="text-[10px] text-hint ml-1">"M⊕"</span></span>
-                                </div>
-                                <div class="flex justify-between text-sm font-mono">
-                                    <span class="text-hint text-[10px]">{t!(i18n, radius)}</span>
-                                    <span class="text-accent">{move || format!("{:.3}", planet_radius.get())}<span class="text-[10px] text-hint ml-1">"R⊕"</span></span>
-                                </div>
-                                <div class="flex justify-between text-sm font-mono">
-                                    <span class="text-hint text-[10px]">{t!(i18n, density_label)}</span>
-                                    <span class="text-accent">{move || format!("{:.3}", planet_density.get())}<span class="text-[10px] text-hint ml-1">"ρ⊕"</span></span>
-                                </div>
-                            </div>
-
-                            <p class="text-[10px] font-semibold text-hint uppercase tracking-widest pt-2">
-                                {t!(i18n, star_orbit)}
-                            </p>
-                            <div class="bg-inset border border-edge rounded-lg px-3 py-2 flex flex-col gap-1.5">
-                                <div class="flex justify-between text-sm font-mono">
-                                    <span class="text-hint text-[10px]">{t!(i18n, planet_semi_major)}</span>
-                                    <span class="text-accent">{move || format!("{:.3}", planet_orb_a.get())}<span class="text-[10px] text-hint ml-1">"AU"</span></span>
-                                </div>
-                                <div class="flex justify-between text-sm font-mono">
-                                    <span class="text-hint text-[10px]">{t!(i18n, star_mass)}</span>
-                                    <span class="text-accent">{move || format!("{:.3}", star_mass.get())}<span class="text-[10px] text-hint ml-1">"M☉"</span></span>
-                                </div>
-                            </div>
-                        }.into_any()
-                    }}
-
                     // ── Moon entries ────────────────────────────────────────
-                    <div class="flex items-center justify-between pt-2">
+                    <div class="flex items-center justify-between">
                         <p class="text-[10px] font-semibold text-hint uppercase tracking-widest">
                             {t!(i18n, moons)}
                         </p>
@@ -248,14 +165,18 @@ pub fn MoonTab() -> impl IntoView {
 
                     {move || {
                         let moon_list = moons.get();
+                        let planets = input_planets.clone();
                         moon_list.into_iter().enumerate().map(|(idx, entry)| {
                             let entry_id = entry.id;
+                            let parent = entry.parent;
+                            let name = entry.name;
                             let mr = entry.radius;
                             let md = entry.density;
                             let mdist = entry.distance;
                             let mr_t = entry.radius_text;
                             let md_t = entry.density_text;
                             let mdist_t = entry.distance_text;
+                            let planets = planets.clone();
                             view! {
                                 <div class="bg-inset border border-edge rounded-xl p-4 flex flex-col gap-3">
                                     <div class="flex items-center justify-between">
@@ -270,6 +191,50 @@ pub fn MoonTab() -> impl IntoView {
                                         >
                                             "✕"
                                         </button>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder=move || t_string!(i18n, moon_name_placeholder)
+                                        class="bg-base border border-edge rounded-lg px-3 py-1.5
+                                               text-heading text-sm outline-none
+                                               focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
+                                        prop:value=move || name.get()
+                                        on:input=move |ev| name.set(event_target_value(&ev))
+                                    />
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[10px] text-hint">
+                                            {t!(i18n, parent_planet)}
+                                        </span>
+                                        <select
+                                            class="bg-base border border-edge rounded-lg px-2 py-1.5
+                                                   text-heading text-sm outline-none cursor-pointer
+                                                   focus:border-accent focus:ring-1 focus:ring-accent/40 w-full"
+                                            on:change=move |ev| {
+                                                if let Ok(v) = event_target_value(&ev).parse::<u32>() {
+                                                    parent.set(v);
+                                                }
+                                            }
+                                        >
+                                            {planets.iter().enumerate().map(|(p_idx, p)| {
+                                                let p_id = p.id;
+                                                let p_name = p.name;
+                                                view! {
+                                                    <option
+                                                        value=p_id.to_string()
+                                                        selected=move || parent.get() == p_id
+                                                    >
+                                                        {move || {
+                                                            let nm = p_name.get();
+                                                            if nm.is_empty() {
+                                                                format!("{} {}", t_string!(i18n, planet), p_idx + 1)
+                                                            } else {
+                                                                nm
+                                                            }
+                                                        }}
+                                                    </option>
+                                                }
+                                            }).collect::<Vec<_>>()}
+                                        </select>
                                     </div>
                                     <div class="flex flex-col gap-1">
                                         <span class="text-[10px] text-hint flex items-center gap-1">
@@ -344,13 +309,7 @@ pub fn MoonTab() -> impl IntoView {
                                    bg-accent/20 text-accent ring-1 ring-accent/30
                                    hover:bg-accent/30 whitespace-nowrap"
                             on:click=move |_| {
-                                let pm  = planet_mass.get();
-                                let pr  = planet_radius.get();
-                                let pd  = planet_density.get();
-                                let oa  = planet_orb_a.get();
-                                let sm  = star_mass.get();
-                                let h_au_val = hill_sphere_au(oa, pm, sm);
-                                let h_rp_val = hill_sphere_planet_radii(oa, pm, sm, pr);
+                                let moon_list = moons.get();
 
                                 let ek = Locale::en.get_keys_const();
                                 let rk = Locale::ru.get_keys_const();
@@ -358,34 +317,54 @@ pub fn MoonTab() -> impl IntoView {
                                     ($key:ident) => { [ek.$key().inner().to_owned(), rk.$key().inner().to_owned()] }
                                 }
 
-                                let mut rows: Vec<([String; 2], String)> = vec![
-                                    (lbl!(hill_sphere),        format!("{:.4} AU  ({:.0} Rp)", h_au_val, h_rp_val)),
-                                    (lbl!(stable_orbit_limit), format!("{:.4} AU  ({:.0} Rp)",
-                                        stable_orbit_limit(h_au_val), stable_orbit_limit(h_rp_val))),
-                                ];
+                                let mut rows: Vec<([String; 2], String)> = Vec::new();
+                                for p in &snap_planets {
+                                    let group: Vec<(usize, &MoonEntry)> = moon_list
+                                        .iter()
+                                        .enumerate()
+                                        .filter(|(_, m)| m.parent.get() == p.id)
+                                        .collect();
+                                    if group.is_empty() {
+                                        continue;
+                                    }
+                                    let pname = snap_planet_name(p.id);
+                                    let sm = stars.params_for(p.host.get()).kepler_mass;
+                                    let pm = p.mass.get();
+                                    let pr = p.eff_radius();
+                                    let pd = density(pm, pr);
+                                    let oa = p.semi_major.get();
+                                    let h_au_val = hill_sphere_au(oa, pm, sm);
+                                    let h_rp_val = hill_sphere_planet_radii(oa, pm, sm, pr);
 
-                                let moon_list = moons.get();
-                                let en_moon = ek.moon().inner();
-                                let ru_moon = rk.moon().inner();
-                                for (i, m) in moon_list.iter().enumerate() {
-                                    let mr = m.radius.get();
-                                    let md = m.density.get();
-                                    let dst = m.distance.get();
-                                    let mass_val = moon_mass(mr, md);
-                                    let ang = angular_size_arcmin(mr * R_EARTH_KM, dst * R_EARTH_KM);
-                                    let (en_pre, ru_pre) = if moon_list.len() > 1 {
-                                        (format!("{} {} ", en_moon, i + 1), format!("{} {} ", ru_moon, i + 1))
-                                    } else {
-                                        (String::new(), String::new())
+                                    let with_pname = |l: [String; 2]| -> [String; 2] {
+                                        [format!("{pname} — {}", l[0]), format!("{pname} — {}", l[1])]
                                     };
-                                    let lbl_p = |ek_s: &str, rk_s: &str| -> [String; 2] {
-                                        [format!("{}{}", en_pre, ek_s), format!("{}{}", ru_pre, rk_s)]
-                                    };
-                                    rows.push((lbl_p(ek.mass_earth().inner(), rk.mass_earth().inner()),          format!("{:.4}", mass_val)));
-                                    rows.push((lbl_p(ek.surface_gravity().inner(), rk.surface_gravity().inner()), format!("{:.3}", moon_gravity(mass_val, mr))));
-                                    rows.push((lbl_p(ek.angular_size().inner(), rk.angular_size().inner()),       format_ang(ang)));
-                                    rows.push((lbl_p(ek.orbital_period_days().inner(), rk.orbital_period_days().inner()), format!("{:.1}", moon_orbital_period_days(dst, pm))));
-                                    rows.push((lbl_p(ek.roche_limit().inner(), rk.roche_limit().inner()),         format!("{:.2}", roche_limit_planet_radii(pd, md))));
+                                    rows.push((
+                                        with_pname(lbl!(hill_sphere)),
+                                        format!("{:.4} AU  ({:.0} Rp)", h_au_val, h_rp_val),
+                                    ));
+                                    rows.push((
+                                        with_pname(lbl!(stable_orbit_limit)),
+                                        format!("{:.4} AU  ({:.0} Rp)",
+                                            stable_orbit_limit(h_au_val), stable_orbit_limit(h_rp_val)),
+                                    ));
+
+                                    for (idx, m) in group {
+                                        let mname = snap_moon_name(m, idx);
+                                        let mr = m.radius.get();
+                                        let md = m.density.get();
+                                        let dst = m.distance.get();
+                                        let mass_val = moon_mass(mr, md);
+                                        let ang = angular_size_arcmin(mr * R_EARTH_KM, dst * R_EARTH_KM);
+                                        let lbl_m = |l: [String; 2]| -> [String; 2] {
+                                            [format!("{mname} — {}", l[0]), format!("{mname} — {}", l[1])]
+                                        };
+                                        rows.push((lbl_m(lbl!(mass_earth)),          format!("{:.4}", mass_val)));
+                                        rows.push((lbl_m(lbl!(surface_gravity)),     format!("{:.3}", moon_gravity(mass_val, mr))));
+                                        rows.push((lbl_m(lbl!(angular_size)),        format_ang(ang)));
+                                        rows.push((lbl_m(lbl!(orbital_period_days)), format!("{:.1}", moon_orbital_period_days(dst, pm))));
+                                        rows.push((lbl_m(lbl!(roche_limit)),         format!("{:.2}", roche_limit_planet_radii(pd, md))));
+                                    }
                                 }
 
                                 let snap = Snapshot { name: world_name.get(), rows };
@@ -409,146 +388,162 @@ pub fn MoonTab() -> impl IntoView {
                         </h2>
                     </div>
 
-                    <SectionHeader label=move || t!(i18n, stability_limits) />
-                    <ResultRow label=move || t!(i18n, hill_sphere)
-                        hint=move || t!(i18n, hint_hill_sphere)>
-                        {move || format!("{:.4} AU  ({:.0} Rp)", h_au(), h_rp())}
-                    </ResultRow>
-                    <ResultRow label=move || t!(i18n, stable_orbit_limit)
-                        hint=move || t!(i18n, hint_stable_orbit)>
-                        {move || format!("{:.4} AU  ({:.0} Rp)", stab_au(), stab_rp())}
-                    </ResultRow>
-
-                    // Per-moon results
                     {move || {
                         let moon_list = moons.get();
-                        let pm = planet_mass.get();
-                        let pd = planet_density.get();
-                        let slrp = stab_rp();
+                        let mut sections: Vec<AnyView> = Vec::new();
 
-                        moon_list.iter().enumerate().map(|(idx, entry)| {
-                            let mr = entry.radius;
-                            let md = entry.density;
-                            let mdist = entry.distance;
-                            let label = format!("Moon {}", idx + 1);
-
-                            let m_mass_val = move || moon_mass(mr.get(), md.get());
-                            let m_grav_val = move || moon_gravity(m_mass_val(), mr.get());
-                            let m_ang = move || {
-                                angular_size_arcmin(mr.get() * R_EARTH_KM, mdist.get() * R_EARTH_KM)
-                            };
-                            let m_period = move || moon_orbital_period_days(mdist.get(), pm);
-                            let m_roche = move || roche_limit_planet_radii(pd, md.get());
-
-                            // orbit validity
-                            let orbit_ok = move || is_moon_orbit_valid(mdist.get(), m_roche(), slrp);
-
-                            view! {
-                                <SectionHeader label=move || label.clone() />
-                                <ResultRow label=move || t!(i18n, mass_earth)
-                                    hint=move || t!(i18n, hint_moon_mass)>
-                                    {move || format!("{:.4}", m_mass_val())}
-                                </ResultRow>
-                                <ResultRow label=move || t!(i18n, surface_gravity)
-                                    hint=move || t!(i18n, hint_moon_gravity)>
-                                    {move || format!("{:.3}", m_grav_val())}
-                                </ResultRow>
-                                <ResultRow label=move || t!(i18n, angular_size)
-                                    hint=move || t!(i18n, hint_angular_size)>
-                                    {move || format_ang(m_ang())}
-                                </ResultRow>
-                                <ResultRow label=move || t!(i18n, orbital_period_days)
-                                    hint=move || t!(i18n, hint_moon_period)>
-                                    {move || format!("{:.1}", m_period())}
-                                </ResultRow>
-                                <ResultRow label=move || t!(i18n, roche_limit)
-                                    hint=move || t!(i18n, hint_roche_limit)>
-                                    {move || format!("{:.2}", m_roche())}
-                                </ResultRow>
-                                <div class="flex justify-between items-start gap-4 py-2.5 px-3
-                                            border-b border-divider/30 rounded hover:bg-edge/20">
-                                    <span class="text-label text-sm flex items-center gap-1 flex-1 min-w-0 flex-wrap">
-                                        {t!(i18n, orbit_valid)}
-                                        <InfoHint text=move || t!(i18n, hint_orbit_valid) />
-                                    </span>
-                                    <span class=move || {
-                                        if orbit_ok() {
-                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
-                                             bg-ok/15 text-ok ring-1 ring-ok/25"
-                                        } else {
-                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
-                                             bg-err/15 text-err ring-1 ring-err/25"
-                                        }
-                                    }>
-                                        {move || if orbit_ok() { t_string!(i18n, yes_label) } else { t_string!(i18n, no_label) }}
-                                    </span>
-                                </div>
+                        for p in &results_planets {
+                            let sm = stars.params_for(p.host.get()).kepler_mass;
+                            let group: Vec<(usize, MoonEntry)> = moon_list
+                                .iter()
+                                .enumerate()
+                                .filter(|(_, m)| m.parent.get() == p.id)
+                                .map(|(i, m)| (i, m.clone()))
+                                .collect();
+                            if group.is_empty() {
+                                continue;
                             }
-                        }).collect::<Vec<_>>()
-                    }}
 
-                    // Multi-moon stability analysis
-                    {move || {
-                        let moon_list = moons.get();
-                        if moon_list.len() < 2 {
-                            return None;
-                        }
-                        let pm = planet_mass.get();
+                            let pname = results_planet_name(p.id);
+                            let pm = p.mass.get();
+                            let pr = p.eff_radius();
+                            let pd = density(pm, pr);
+                            let oa = p.semi_major.get();
+                            let h_au = hill_sphere_au(oa, pm, sm);
+                            let h_rp = hill_sphere_planet_radii(oa, pm, sm, pr);
+                            let stab_rp = stable_orbit_limit(h_rp);
 
-                        // gather distances and periods
-                        let data: Vec<(f64, f64)> = moon_list.iter().map(|m| {
-                            let d = m.distance.get();
-                            let p = moon_orbital_period_days(d, pm);
-                            (d, p)
-                        }).collect();
+                            sections.push(view! {
+                                <SectionHeader label={
+                                    let pname = pname.clone();
+                                    move || pname.clone()
+                                } />
+                                <ResultRow label=move || t!(i18n, hill_sphere)
+                                    hint=move || t!(i18n, hint_hill_sphere)>
+                                    {format!("{:.4} AU  ({:.0} Rp)", h_au, h_rp)}
+                                </ResultRow>
+                                <ResultRow label=move || t!(i18n, stable_orbit_limit)
+                                    hint=move || t!(i18n, hint_stable_orbit)>
+                                    {format!("{:.4} AU  ({:.0} Rp)",
+                                        stable_orbit_limit(h_au), stab_rp)}
+                                </ResultRow>
+                            }.into_any());
 
-                        let mut pair_views = Vec::new();
-                        for i in 0..data.len() {
-                            for j in (i + 1)..data.len() {
-                                let (d_inner, p_inner) = if data[i].0 < data[j].0 { data[i] } else { data[j] };
-                                let (d_outer, p_outer) = if data[i].0 >= data[j].0 { data[i] } else { data[j] };
-                                let stable_pair = are_moons_stable(d_inner, d_outer);
-                                let resonance = near_resonance(p_inner, p_outer);
-                                let ratio = d_outer / d_inner;
-                                let label: &'static str = Box::leak(
-                                    format!("{} {} <-> {} {}", t_string!(i18n, moon), i + 1, t_string!(i18n, moon), j + 1).into_boxed_str()
-                                );
+                            // Per-moon results
+                            for (idx, m) in &group {
+                                let label = results_moon_name(m, *idx);
+                                let mr = m.radius.get();
+                                let md = m.density.get();
+                                let dst = m.distance.get();
+                                let mass_val = moon_mass(mr, md);
+                                let roche = roche_limit_planet_radii(pd, md);
+                                let orbit_ok = is_moon_orbit_valid(dst, roche, stab_rp);
 
-                                pair_views.push(view! {
-                                    <div class="flex flex-wrap items-center gap-2 py-2 px-3
+                                sections.push(view! {
+                                    <p class="text-[11px] font-semibold text-label pt-3 pb-1 px-3">
+                                        {label}
+                                    </p>
+                                    <ResultRow label=move || t!(i18n, mass_earth)
+                                        hint=move || t!(i18n, hint_moon_mass)>
+                                        {format!("{mass_val:.4}")}
+                                    </ResultRow>
+                                    <ResultRow label=move || t!(i18n, surface_gravity)
+                                        hint=move || t!(i18n, hint_moon_gravity)>
+                                        {format!("{:.3}", moon_gravity(mass_val, mr))}
+                                    </ResultRow>
+                                    <ResultRow label=move || t!(i18n, angular_size)
+                                        hint=move || t!(i18n, hint_angular_size)>
+                                        {format_ang(angular_size_arcmin(mr * R_EARTH_KM, dst * R_EARTH_KM))}
+                                    </ResultRow>
+                                    <ResultRow label=move || t!(i18n, orbital_period_days)
+                                        hint=move || t!(i18n, hint_moon_period)>
+                                        {format!("{:.1}", moon_orbital_period_days(dst, pm))}
+                                    </ResultRow>
+                                    <ResultRow label=move || t!(i18n, roche_limit)
+                                        hint=move || t!(i18n, hint_roche_limit)>
+                                        {format!("{roche:.2}")}
+                                    </ResultRow>
+                                    <div class="flex justify-between items-start gap-4 py-2.5 px-3
                                                 border-b border-divider/30 rounded hover:bg-edge/20">
-                                        <span class="text-label text-sm flex-1">{label}</span>
-                                        <span class="text-[10px] font-mono text-hint">
-                                            {format!("{} {ratio:.2}", t_string!(i18n, ratio_label))}
+                                        <span class="text-label text-sm flex items-center gap-1 flex-1 min-w-0 flex-wrap">
+                                            {t!(i18n, orbit_valid)}
+                                            <InfoHint text=move || t!(i18n, hint_orbit_valid) />
                                         </span>
-                                        <span class=if stable_pair {
-                                            "text-[10px] font-semibold px-2 py-0.5 rounded-full \
+                                        <span class=if orbit_ok {
+                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
                                              bg-ok/15 text-ok ring-1 ring-ok/25"
                                         } else {
-                                            "text-[10px] font-semibold px-2 py-0.5 rounded-full \
+                                            "text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 \
                                              bg-err/15 text-err ring-1 ring-err/25"
                                         }>
-                                            {if stable_pair { t_string!(i18n, stable) } else { t_string!(i18n, too_close) }}
+                                            {if orbit_ok { t_string!(i18n, yes_label) } else { t_string!(i18n, no_label) }}
                                         </span>
-                                        {if resonance {
-                                            Some(view! {
-                                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full
-                                                             bg-accent-alt/15 text-accent-alt ring-1 ring-accent-alt/25">
-                                                    {t!(i18n, near_resonance)}
-                                                </span>
-                                            })
-                                        } else {
-                                            None
-                                        }}
                                     </div>
-                                });
+                                }.into_any());
+                            }
+
+                            // Multi-moon stability inside this planet's group
+                            if group.len() >= 2 {
+                                let data: Vec<(String, f64, f64)> = group
+                                    .iter()
+                                    .map(|(idx, m)| {
+                                        let d = m.distance.get();
+                                        (results_moon_name(m, *idx), d, moon_orbital_period_days(d, pm))
+                                    })
+                                    .collect();
+
+                                let mut pair_views: Vec<AnyView> = Vec::new();
+                                for i in 0..data.len() {
+                                    for j in (i + 1)..data.len() {
+                                        let (d_inner, p_inner) =
+                                            if data[i].1 < data[j].1 { (data[i].1, data[i].2) } else { (data[j].1, data[j].2) };
+                                        let (d_outer, p_outer) =
+                                            if data[i].1 >= data[j].1 { (data[i].1, data[i].2) } else { (data[j].1, data[j].2) };
+                                        let stable_pair = are_moons_stable(d_inner, d_outer);
+                                        let resonance = near_resonance(p_inner, p_outer);
+                                        let ratio = d_outer / d_inner;
+                                        let label = format!("{} <-> {}", data[i].0, data[j].0);
+
+                                        pair_views.push(view! {
+                                            <div class="flex flex-wrap items-center gap-2 py-2 px-3
+                                                        border-b border-divider/30 rounded hover:bg-edge/20">
+                                                <span class="text-label text-sm flex-1">{label}</span>
+                                                <span class="text-[10px] font-mono text-hint">
+                                                    {format!("{} {ratio:.2}", t_string!(i18n, ratio_label))}
+                                                </span>
+                                                <span class=if stable_pair {
+                                                    "text-[10px] font-semibold px-2 py-0.5 rounded-full \
+                                                     bg-ok/15 text-ok ring-1 ring-ok/25"
+                                                } else {
+                                                    "text-[10px] font-semibold px-2 py-0.5 rounded-full \
+                                                     bg-err/15 text-err ring-1 ring-err/25"
+                                                }>
+                                                    {if stable_pair { t_string!(i18n, stable) } else { t_string!(i18n, too_close) }}
+                                                </span>
+                                                {resonance.then(|| view! {
+                                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full
+                                                                 bg-accent-alt/15 text-accent-alt ring-1 ring-accent-alt/25">
+                                                        {t!(i18n, near_resonance)}
+                                                    </span>
+                                                })}
+                                            </div>
+                                        }.into_any());
+                                    }
+                                }
+
+                                sections.push(view! {
+                                    <SectionHeader label=move || t!(i18n, multi_moon_stability) />
+                                    {pair_views}
+                                }.into_any());
                             }
                         }
 
-                        Some(view! {
-                            <SectionHeader label=move || t!(i18n, multi_moon_stability) />
-                            {pair_views}
-                        })
+                        if sections.is_empty() {
+                            sections.push(view! {
+                                <p class="text-xs text-hint py-3 px-3">{t!(i18n, no_moons_note)}</p>
+                            }.into_any());
+                        }
+                        sections
                     }}
                 </div>
             </div>

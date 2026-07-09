@@ -13,6 +13,20 @@
     "tab_star": "Star",
     "tab_planet": "Planet",
     "tab_moon": "Moon",
+    "tab_system": "System",
+
+    "system_map": "System map",
+    "system_summary": "Summary",
+    "log_scale_note": "distances on a log scale",
+    "legend_hz": "Habitable zone",
+    "legend_hz_unstable": "Habitable zone — orbits unstable",
+    "legend_frost": "Frost line",
+    "legend_planet_orbit": "Planet orbit",
+    "legend_s_crit": "S-type stability limit",
+    "legend_p_crit": "P-type minimum orbit",
+    "moon_system_map": "Moon system",
+    "no_moons_note": "No moons — add them on the Moon tab.",
+    "map_unavailable": "Map unavailable:",
 
     "star": "Star",
     "star_a": "Star A",
@@ -116,6 +130,11 @@
     "perihelion_long": "Perihelion longitude",
     "hint_perihelion_long": "Where perihelion (closest approach to the star) sits along the orbit, measured from the northern spring equinox: 90° = northern summer solstice, 270° = northern winter solstice. With a non-zero eccentricity this skews seasons between hemispheres — Earth ≈ 283° (perihelion in early January, softening northern winters). Irrelevant on a circular orbit.",
     "climate_locked_note": "Tidally locked — no day-night cycle, so the latitude climate model doesn't apply. Climate is set by the day/night terminator instead: scorching dayside, frozen nightside, a possibly habitable twilight ring.",
+
+    "add_planet": "+ Add planet",
+    "host_star": "Host star",
+    "planet_name_placeholder": "Planet name",
+    "moon_name_placeholder": "Moon name",
 
     "parent_planet": "Parent planet",
     "radius": "Radius",
@@ -260,7 +279,7 @@
     "hint_moon_period": "Time for the moon to complete one orbit around the planet. Our Moon ≈ 27.3 days. Computed via Kepler's third law from orbital distance and planet mass. Determines tidal rhythms.",
     "hint_roche_limit": "Minimum safe distance from the planet, in planet radii. Below this, tidal forces tear the moon apart (forming rings). Depends on density ratio between planet and moon. ~2.5 Rp for equal densities.",
     "hint_orbit_valid": "Checks that the moon's orbit is physically possible: it must be above the Roche limit (not torn apart) and below the stable orbit limit (not stripped by the star). Both conditions must be met.",
-    "hint_multi_moon": "Checks orbital spacing between moon pairs. Moons with orbital distance ratio <1.3 are too close and will gravitationally scatter each other. Also detects near-resonances (2:1, 3:2, etc.) which can amplify perturbations.",
+    "hint_multi_moon": "Checks orbital spacing between moon pairs. Moons with orbital distance ratio <1.3 are too close and will gravitationally scatter each other. Also detects near-resonances (2:1, 3:2, etc.) which can amplify perturbations. Known exception the model ignores: co-orbital 1:1 configurations — trojan moons at L4/L5 (Saturn's Telesto & Calypso on Tethys' orbit) or horseshoe pairs (Janus & Epimetheus) — stable only when the moons are tiny compared to the planet.",
 
     "flora_reasoning_ob": "Star peaks in extreme UV. Surface flora is unlikely without a substantial ozone layer. Underwater photosynthesis may use scattered visible light.",
     "flora_reasoning_a": "A-type star peaks in UV/blue. Flora would absorb the abundant blue and green photons, reflecting longer wavelengths. Plants would appear red or deep orange.",

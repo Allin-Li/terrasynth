@@ -3,42 +3,53 @@ use leptos::prelude::*;
 use wasm_bindgen::{JsCast, JsValue};
 
 /// Persisted `f64` input keys that define a world and travel in a share link.
+/// Per-planet and per-moon keys are dynamic — see the suffix lists below.
 const F64_KEYS: &[&str] = &[
     // star tab
     "star_mass",
     "star_b_mass",
     "binary_separation",
     "binary_eccentricity",
-    // planet tab
-    "planet_mass",
-    "planet_manual_radius",
-    "planet_semi_major",
-    "planet_eccentricity",
-    "planet_axial_tilt",
-    "planet_peri_long",
+    // globals shared by every planet
     "system_age_gyr",
     "planet_custom_star_mass",
-    "planet_albedo",
-    "planet_co2_fraction",
-    "planet_atmo_mass",
-    // moon tab (custom overrides + the always-present first moon)
-    "moon_planet_mass",
-    "moon_planet_radius",
-    "moon_planet_density",
-    "moon_planet_orb_a",
-    "moon_star_mass",
-    "moon_0_radius",
-    "moon_0_density",
-    "moon_0_dist",
 ];
 
 /// Persisted `bool` toggle keys included in a share link.
-const BOOL_KEYS: &[&str] = &[
-    "star_binary_mode",
-    "binary_p_type",
-    "planet_use_manual_r",
-    "planet_custom_star",
-    "moon_custom_planet",
+const BOOL_KEYS: &[&str] = &["star_binary_mode", "planet_custom_star"];
+
+/// Per-planet keys look like `planet_{id}_{suffix}`; the id list itself
+/// travels as `planet_ids` (comma-separated, never empty).
+const PLANET_F64_SUFFIXES: &[&str] = &[
+    "mass", "manual_radius", "semi_major", "ecc", "tilt", "peri_long", "albedo", "co2",
+    "atmo_mass",
+];
+const PLANET_BOOL_SUFFIXES: &[&str] = &["use_manual_r"];
+
+/// Per-moon `f64` keys look like `moon_{id}_{suffix}`; the id list itself
+/// travels as `moon_ids` (comma-separated, may be empty).
+const MOON_F64_SUFFIXES: &[&str] = &["radius", "density", "dist"];
+
+/// Longest accepted id list in a share link — guards against hash-crafted
+/// localStorage flooding.
+const MAX_SHARED_BODIES: usize = 32;
+
+/// Longest accepted decoded planet/moon name.
+const MAX_NAME_LEN: usize = 60;
+
+/// Single-planet keys from links minted before multi-planet support, mapped
+/// onto their planet-0 equivalents.
+const LEGACY_PLANET_KEYS: &[(&str, &str)] = &[
+    ("planet_mass", "planet_0_mass"),
+    ("planet_use_manual_r", "planet_0_use_manual_r"),
+    ("planet_manual_radius", "planet_0_manual_radius"),
+    ("planet_semi_major", "planet_0_semi_major"),
+    ("planet_eccentricity", "planet_0_ecc"),
+    ("planet_axial_tilt", "planet_0_tilt"),
+    ("planet_peri_long", "planet_0_peri_long"),
+    ("planet_albedo", "planet_0_albedo"),
+    ("planet_co2_fraction", "planet_0_co2"),
+    ("planet_atmo_mass", "planet_0_atmo_mass"),
 ];
 
 fn get_storage() -> Option<web_sys::Storage> {
@@ -63,10 +74,9 @@ pub fn import_from_hash() {
     let mut imported = false;
     for pair in pairs.split('&') {
         let Some((k, v)) = pair.split_once('=') else { continue };
-        let valid = (F64_KEYS.contains(&k)
-            && v.parse::<f64>().map(f64::is_finite).unwrap_or(false))
-            || (BOOL_KEYS.contains(&k) && v.parse::<bool>().is_ok());
-        if valid && storage.set_item(k, v).is_ok() {
+        let k = translate_legacy(k);
+        let Some(value) = validated_value(k, v) else { continue };
+        if storage.set_item(k, &value).is_ok() {
             imported = true;
         }
     }
@@ -85,6 +95,85 @@ pub fn import_from_hash() {
     }
 }
 
+/// Maps pre-multi-planet keys to their planet-0 equivalents.
+fn translate_legacy(k: &str) -> &str {
+    LEGACY_PLANET_KEYS
+        .iter()
+        .find(|(old, _)| *old == k)
+        .map_or(k, |(_, new)| *new)
+}
+
+fn is_finite_f64(v: &str) -> bool {
+    v.parse::<f64>().map(f64::is_finite).unwrap_or(false)
+}
+
+/// A bounded comma-separated list of u32 ids.
+fn is_valid_id_list(v: &str, allow_empty: bool) -> bool {
+    if v.is_empty() {
+        return allow_empty;
+    }
+    v.split(',').count() <= MAX_SHARED_BODIES && v.split(',').all(|p| p.parse::<u32>().is_ok())
+}
+
+/// Percent-decodes a shared name and bounds its length.
+fn decode_name(v: &str) -> Option<String> {
+    let s: String = js_sys::decode_uri_component(v).ok()?.into();
+    (s.chars().count() <= MAX_NAME_LEN).then_some(s)
+}
+
+/// Returns the value to store for hash pair `k=v` if the pair is a valid
+/// world key, or `None` to skip it. Names come back percent-decoded.
+fn validated_value(k: &str, v: &str) -> Option<String> {
+    if F64_KEYS.contains(&k) {
+        return is_finite_f64(v).then(|| v.to_owned());
+    }
+    if BOOL_KEYS.contains(&k) {
+        return v.parse::<bool>().is_ok().then(|| v.to_owned());
+    }
+    if k == "planet_ids" {
+        return is_valid_id_list(v, false).then(|| v.to_owned());
+    }
+    if k == "moon_ids" {
+        return is_valid_id_list(v, true).then(|| v.to_owned());
+    }
+    if let Some(rest) = k.strip_prefix("planet_") {
+        let (id, suffix) = rest.split_once('_')?;
+        if id.parse::<u32>().is_err() {
+            return None;
+        }
+        if PLANET_F64_SUFFIXES.contains(&suffix) {
+            return is_finite_f64(v).then(|| v.to_owned());
+        }
+        if PLANET_BOOL_SUFFIXES.contains(&suffix) {
+            return v.parse::<bool>().is_ok().then(|| v.to_owned());
+        }
+        if suffix == "host" {
+            return matches!(v.parse::<u32>(), Ok(h) if h <= 2).then(|| v.to_owned());
+        }
+        if suffix == "name" {
+            return decode_name(v);
+        }
+        return None;
+    }
+    if let Some(rest) = k.strip_prefix("moon_") {
+        let (id, suffix) = rest.split_once('_')?;
+        if id.parse::<u32>().is_err() {
+            return None;
+        }
+        if MOON_F64_SUFFIXES.contains(&suffix) {
+            return is_finite_f64(v).then(|| v.to_owned());
+        }
+        if suffix == "parent" {
+            return v.parse::<u32>().is_ok().then(|| v.to_owned());
+        }
+        if suffix == "name" {
+            return decode_name(v);
+        }
+        return None;
+    }
+    None
+}
+
 /// Build a shareable URL encoding all currently stored world inputs.
 fn build_share_url() -> Option<String> {
     let window = web_sys::window()?;
@@ -94,7 +183,7 @@ fn build_share_url() -> Option<String> {
     let search = location.search().ok()?;
     let storage = get_storage()?;
 
-    let params: Vec<String> = F64_KEYS
+    let mut params: Vec<String> = F64_KEYS
         .iter()
         .chain(BOOL_KEYS)
         .filter_map(|k| {
@@ -105,6 +194,56 @@ fn build_share_url() -> Option<String> {
                 .map(|v| format!("{k}={v}"))
         })
         .collect();
+
+    // A stored name is user text: percent-encode it for the hash.
+    fn push_name(params: &mut Vec<String>, storage: &web_sys::Storage, key: String) {
+        if let Some(name) = storage.get_item(&key).ok().flatten() {
+            if !name.is_empty() {
+                let encoded: String = js_sys::encode_uri_component(&name).into();
+                params.push(format!("{key}={encoded}"));
+            }
+        }
+    }
+
+    // Per-planet inputs for every persisted planet id.
+    let planet_ids = super::storage::load_planet_ids();
+    for id in &planet_ids {
+        for suffix in PLANET_F64_SUFFIXES
+            .iter()
+            .chain(PLANET_BOOL_SUFFIXES)
+            .chain(&["host"])
+        {
+            let key = format!("planet_{id}_{suffix}");
+            if let Some(v) = storage.get_item(&key).ok().flatten() {
+                params.push(format!("{key}={v}"));
+            }
+        }
+        push_name(&mut params, &storage, format!("planet_{id}_name"));
+    }
+    params.push(format!(
+        "planet_ids={}",
+        planet_ids.iter().map(u32::to_string).collect::<Vec<_>>().join(",")
+    ));
+
+    // Per-moon inputs for every persisted moon id.
+    let moon_ids = super::storage::load_moon_ids();
+    for id in &moon_ids {
+        for suffix in MOON_F64_SUFFIXES {
+            let key = format!("moon_{id}_{suffix}");
+            if let Some(v) = storage.get_item(&key).ok().flatten() {
+                params.push(format!("{key}={v}"));
+            }
+        }
+        let parent_key = format!("moon_{id}_parent");
+        if let Some(v) = storage.get_item(&parent_key).ok().flatten() {
+            params.push(format!("{parent_key}={v}"));
+        }
+        push_name(&mut params, &storage, format!("moon_{id}_name"));
+    }
+    params.push(format!(
+        "moon_ids={}",
+        moon_ids.iter().map(u32::to_string).collect::<Vec<_>>().join(",")
+    ));
 
     Some(format!("{origin}{path}{search}#{}", params.join("&")))
 }
